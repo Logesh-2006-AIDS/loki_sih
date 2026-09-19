@@ -1,6 +1,7 @@
 from app.db.base import Base
 from app.models.user import User
 from app.models.scheme import Scheme
+from app.models.scheme_version import SchemeVersion
 from app.models.application import Application
 from app.models.document import Document
 from app.models.document_verification import DocumentVerification
@@ -16,6 +17,7 @@ __all__ = [
     "Base",
     "User",
     "Scheme",
+    "SchemeVersion",
     "Application",
     "Document",
     "DocumentVerification",

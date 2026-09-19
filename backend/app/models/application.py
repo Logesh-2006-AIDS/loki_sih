@@ -24,6 +24,9 @@ class Application(Base):
     scheme_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("schemes.id", ondelete="CASCADE"), nullable=False, index=True
     )
+    scheme_version_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("scheme_versions.id", ondelete="SET NULL"), nullable=True, index=True
+    )
     status: Mapped[ApplicationStatus] = mapped_column(
         Enum(ApplicationStatus, native_enum=False),
         default=ApplicationStatus.DRAFT,
@@ -32,6 +35,9 @@ class Application(Base):
     )
     form_data: Mapped[Dict[str, Any]] = mapped_column(
         JSONB, nullable=False, default=dict
+    )
+    frozen_rules_snapshot: Mapped[Dict[str, Any] | None] = mapped_column(
+        JSONB, nullable=True
     )
     merit_score: Mapped[float | None] = mapped_column(Float, nullable=True)
     submitted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
@@ -49,6 +55,7 @@ class Application(Base):
     # Relationships
     applicant = relationship("User", back_populates="applications")
     scheme = relationship("Scheme", back_populates="applications")
+    scheme_version = relationship("SchemeVersion", back_populates="applications")
     documents = relationship("Document", back_populates="application", cascade="all, delete-orphan")
     deficiencies = relationship("Deficiency", back_populates="application", cascade="all, delete-orphan")
     merit_scores = relationship("MeritScore", back_populates="application", cascade="all, delete-orphan")

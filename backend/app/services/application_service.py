@@ -17,6 +17,7 @@ from app.schemas.application import (
 )
 from app.repositories.application_repo import ApplicationRepository
 from app.repositories.scheme_repo import SchemeRepository
+from app.repositories.scheme_version_repo import SchemeVersionRepository
 from app.repositories.audit_repo import AuditRepository
 
 
@@ -30,6 +31,7 @@ class ApplicationService:
         self.db = db
         self.repo = ApplicationRepository(db)
         self.scheme_repo = SchemeRepository(db)
+        self.scheme_version_repo = SchemeVersionRepository(db)
         self.audit_repo = AuditRepository(db)
 
     def _generate_reference_id(self, scheme_code: str) -> str:
@@ -44,11 +46,13 @@ class ApplicationService:
         if not scheme:
             raise EntityNotFoundException(f"Scheme with ID {data.scheme_id} not found")
 
+        active_version = self.scheme_version_repo.get_active_version(scheme.id)
         ref_id = self._generate_reference_id(scheme.scheme_code)
         application = Application(
             reference_id=ref_id,
             applicant_id=applicant_id,
             scheme_id=data.scheme_id,
+            scheme_version_id=active_version.id if active_version else None,
             status=ApplicationStatus.DRAFT,
             form_data=data.form_data,
         )
@@ -61,7 +65,11 @@ class ApplicationService:
             actor_id=applicant_id,
             action="APPLICATION_DRAFT_CREATED",
             new_status=str(ApplicationStatus.DRAFT.value),
-            details={"reference_id": ref_id, "scheme_code": scheme.scheme_code},
+            details={
+                "reference_id": ref_id,
+                "scheme_code": scheme.scheme_code,
+                "scheme_version": active_version.scheme_version if active_version else "1.0",
+            },
         )
         return ApplicationResponse.model_validate(created)
 
@@ -80,6 +88,17 @@ class ApplicationService:
                 "APPLICATION", str(app.status), str(ApplicationStatus.SUBMITTED)
             )
 
+        # Ensure scheme_version_id is bound and freeze rules snapshot
+        if not app.scheme_version_id:
+            active_version = self.scheme_version_repo.get_active_version(app.scheme_id)
+            if active_version:
+                app.scheme_version_id = active_version.id
+                app.frozen_rules_snapshot = dict(active_version.eligibility_rules)
+        else:
+            version = self.scheme_version_repo.get_by_id(app.scheme_version_id)
+            if version:
+                app.frozen_rules_snapshot = dict(version.eligibility_rules)
+
         prev_status = app.status
         app.status = ApplicationStatus.SUBMITTED
         app.submitted_at = datetime.now(timezone.utc)
@@ -93,7 +112,10 @@ class ApplicationService:
             action="APPLICATION_SUBMITTED",
             previous_status=str(prev_status.value if hasattr(prev_status, "value") else prev_status),
             new_status=str(ApplicationStatus.SUBMITTED.value),
-            details={"reference_id": updated.reference_id},
+            details={
+                "reference_id": updated.reference_id,
+                "scheme_version_id": str(updated.scheme_version_id) if updated.scheme_version_id else None,
+            },
         )
         return ApplicationResponse.model_validate(updated)
 

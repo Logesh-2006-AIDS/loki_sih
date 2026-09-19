@@ -1,10 +1,11 @@
 """
-Idempotent Database Seed Script - Phase 0 Foundation
+Idempotent Database Seed Script - Phase 1 Foundation
 AI-Enabled Scholarship & Fellowship Management System (Ministry of Tribal Affairs)
 
 Seeds:
   - 4 Demo Users (APPLICANT, OFFICER, COMMITTEE, ADMIN)
-  - 2 Demo Schemes (NFST, NOS) with clear DEMO/PROTOTYPE disclaimers
+  - 2 Demo Schemes (NFST, NOS) with version 1.0 SchemeVersion records
+  - Explicit rule definitions and visible PROTOTYPE / DEMO disclaimers
 """
 
 import sys
@@ -17,6 +18,7 @@ sys.path.insert(0, str(backend_dir))
 from app.db.session import SessionLocal
 from app.models.user import User
 from app.models.scheme import Scheme
+from app.models.scheme_version import SchemeVersion
 from app.core.enums import UserRole
 from app.core.security import get_password_hash
 from app.repositories.audit_repo import AuditRepository
@@ -64,15 +66,49 @@ DEMO_SCHEMES = [
             "Financial assistance to Scheduled Tribe (ST) students to pursue higher studies "
             "such as M.Phil and Ph.D. degrees in Sciences, Humanities, and Engineering in India. "
             "[DEMO / PROTOTYPE configuration for SIH testing. Official scheme guidelines pending verification. "
-            "Note: scheme_version is the foundation for future versioning, not full history.]"
+            "Note: scheme_version is the authoritative foundation for versioning.]"
         ),
         "eligibility_rules": {
-            "disclaimer": "DEMO / PROTOTYPE RULES",
+            "disclaimer": "DEMO / PROTOTYPE CONFIGURATION (Indicative Only - Not Official Gazette Rules)",
             "community": "ST",
             "min_qualifying_percentage": 55.0,
             "max_annual_family_income": 600000,
             "valid_course_types": ["M.Phil", "Ph.D.", "Integrated Ph.D."],
             "mode": "Full-Time",
+            "rules": [
+                {
+                    "field": "community",
+                    "operator": "equals",
+                    "value": "ST",
+                    "label": "Community / Category",
+                    "pass_message": "Category verified: Scheduled Tribe (ST).",
+                    "fail_message": "Applicant must belong to the Scheduled Tribe (ST) community.",
+                },
+                {
+                    "field": "min_qualifying_percentage",
+                    "operator": "greater_than_or_equal",
+                    "value": 55.0,
+                    "label": "Qualifying Marks (%)",
+                    "pass_message": "Qualifying marks requirement satisfied (>= 55.0%).",
+                    "fail_message": "Minimum 55.0% marks in Master's degree required.",
+                },
+                {
+                    "field": "max_annual_family_income",
+                    "operator": "less_than_or_equal",
+                    "value": 600000,
+                    "label": "Annual Family Income Ceiling (₹)",
+                    "pass_message": "Family income is within the ₹6,00,000 ceiling.",
+                    "fail_message": "Family income exceeds the ₹6,00,000 ceiling.",
+                },
+                {
+                    "field": "course_type",
+                    "operator": "in",
+                    "value": ["M.Phil", "Ph.D.", "Integrated Ph.D."],
+                    "label": "Course Enrollment",
+                    "pass_message": "Course enrollment is eligible (M.Phil / Ph.D. / Integrated Ph.D.).",
+                    "fail_message": "Must be enrolled in regular M.Phil, Ph.D. or Integrated Ph.D.",
+                },
+            ],
         },
         "form_schema": {
             "disclaimer": "DEMO / PROTOTYPE SCHEMA",
@@ -118,16 +154,50 @@ DEMO_SCHEMES = [
             "Financial assistance to selected ST candidates for pursuing Master level courses and "
             "Ph.D. in recognized foreign universities/institutions abroad. "
             "[DEMO / PROTOTYPE configuration for SIH testing. Official scheme guidelines pending verification. "
-            "Note: scheme_version is the foundation for future versioning, not full history.]"
+            "Note: scheme_version is the authoritative foundation for versioning.]"
         ),
         "eligibility_rules": {
-            "disclaimer": "DEMO / PROTOTYPE RULES",
+            "disclaimer": "DEMO / PROTOTYPE CONFIGURATION (Indicative Only - Not Official Gazette Rules)",
             "community": "ST",
             "min_qualifying_percentage": 55.0,
             "max_annual_family_income": 800000,
             "max_age": 35,
             "passport_required": True,
             "target_institution_ranking": "Top 500 QS World University Rankings",
+            "rules": [
+                {
+                    "field": "community",
+                    "operator": "equals",
+                    "value": "ST",
+                    "label": "Community / Category",
+                    "pass_message": "Category verified: Scheduled Tribe (ST).",
+                    "fail_message": "Applicant must belong to the Scheduled Tribe (ST) community.",
+                },
+                {
+                    "field": "min_qualifying_percentage",
+                    "operator": "greater_than_or_equal",
+                    "value": 55.0,
+                    "label": "Qualifying Degree Marks (%)",
+                    "pass_message": "Qualifying marks requirement satisfied (>= 55.0%).",
+                    "fail_message": "Minimum 55.0% marks in qualifying degree required.",
+                },
+                {
+                    "field": "max_annual_family_income",
+                    "operator": "less_than_or_equal",
+                    "value": 800000,
+                    "label": "Annual Family Income Ceiling (₹)",
+                    "pass_message": "Family income is within the ₹8,00,000 ceiling.",
+                    "fail_message": "Family income exceeds the ₹8,00,000 ceiling.",
+                },
+                {
+                    "field": "max_age",
+                    "operator": "less_than_or_equal",
+                    "value": 35,
+                    "label": "Maximum Age Limit",
+                    "pass_message": "Candidate age is within the 35 years limit.",
+                    "fail_message": "Candidate age must not exceed 35 years as on application deadline.",
+                },
+            ],
         },
         "form_schema": {
             "disclaimer": "DEMO / PROTOTYPE SCHEMA",
@@ -172,7 +242,7 @@ def seed_database():
     db = SessionLocal()
     audit_repo = AuditRepository(db)
     print("=" * 70)
-    print("MTA Scholarship & Fellowship System - Phase 0 Foundation Database Seed")
+    print("MTA Scholarship & Fellowship System - Phase 1 Foundation Database Seed")
     print("=" * 70)
 
     try:
@@ -204,14 +274,21 @@ def seed_database():
                 )
                 print(f"  [+] Created User: {user.email} (Role: {user.role.value})")
 
-        # Seed Demo Schemes
-        print("\n[2/2] Checking and seeding Demo Schemes...")
+        # Seed Demo Schemes & SchemeVersion records
+        print("\n[2/2] Checking and seeding Demo Schemes & Scheme Versions...")
         for s_data in DEMO_SCHEMES:
             existing_scheme = (
                 db.query(Scheme).filter(Scheme.scheme_code == s_data["scheme_code"]).first()
             )
             if existing_scheme:
-                print(f"  -> Scheme '{s_data['scheme_code']}' already exists. Skipping.")
+                print(f"  -> Scheme '{s_data['scheme_code']}' already exists. Updating mirror fields.")
+                existing_scheme.eligibility_rules = s_data["eligibility_rules"]
+                existing_scheme.form_schema = s_data["form_schema"]
+                existing_scheme.required_documents = s_data["required_documents"]
+                existing_scheme.scoring_weights = s_data["scoring_weights"]
+                db.add(existing_scheme)
+                db.commit()
+                scheme = existing_scheme
             else:
                 scheme = Scheme(
                     scheme_code=s_data["scheme_code"],
@@ -236,6 +313,43 @@ def seed_database():
                     details={"scheme_code": scheme.scheme_code, "version": scheme.scheme_version},
                 )
                 print(f"  [+] Created Scheme: {scheme.scheme_code} - {scheme.name}")
+
+            # Ensure authoritative SchemeVersion row exists
+            existing_version = (
+                db.query(SchemeVersion)
+                .filter(
+                    SchemeVersion.scheme_code == s_data["scheme_code"],
+                    SchemeVersion.scheme_version == s_data["scheme_version"],
+                )
+                .first()
+            )
+            if existing_version:
+                print(f"  -> SchemeVersion '{s_data['scheme_code']} {s_data['scheme_version']}' already exists. Updating rules.")
+                existing_version.eligibility_rules = s_data["eligibility_rules"]
+                existing_version.form_schema = s_data["form_schema"]
+                existing_version.required_documents = s_data["required_documents"]
+                existing_version.scoring_weights = s_data["scoring_weights"]
+                db.add(existing_version)
+                db.commit()
+            else:
+                new_version = SchemeVersion(
+                    scheme_id=scheme.id,
+                    scheme_code=s_data["scheme_code"],
+                    scheme_version=s_data["scheme_version"],
+                    name=s_data["name"],
+                    description=s_data["description"],
+                    is_demo=s_data["is_demo"],
+                    eligibility_rules=s_data["eligibility_rules"],
+                    form_schema=s_data["form_schema"],
+                    required_documents=s_data["required_documents"],
+                    scoring_weights=s_data["scoring_weights"],
+                    is_active=True,
+                    is_locked=False,
+                )
+                db.add(new_version)
+                db.commit()
+                db.refresh(new_version)
+                print(f"  [+] Created SchemeVersion: {new_version.scheme_code} v{new_version.scheme_version}")
 
         print("\n" + "=" * 70)
         print("SEEDING COMPLETED SUCCESSFULLY")

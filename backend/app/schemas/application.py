@@ -24,8 +24,10 @@ class ApplicationResponse(BaseModel):
     reference_id: str
     applicant_id: uuid.UUID
     scheme_id: uuid.UUID
+    scheme_version_id: Optional[uuid.UUID] = None
     status: ApplicationStatus
     form_data: Dict[str, Any]
+    frozen_rules_snapshot: Optional[Dict[str, Any]] = None
     merit_score: Optional[float] = None
     submitted_at: Optional[datetime] = None
     created_at: datetime
