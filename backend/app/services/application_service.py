@@ -164,7 +164,10 @@ class ApplicationService:
                 )
 
     def submit_application(
-        self, application_id: uuid.UUID, applicant_id: uuid.UUID
+        self,
+        application_id: uuid.UUID,
+        applicant_id: uuid.UUID,
+        trigger_verification: bool = False,
     ) -> ApplicationResponse:
         app = self.repo.get_by_id(application_id)
         if not app:
@@ -232,7 +235,15 @@ class ApplicationService:
             },
         )
 
+        # Step 3c: Execute document verification pipeline if requested
+        if trigger_verification:
+            from app.services.verification_service import DocumentVerificationService
+            verif_service = DocumentVerificationService(self.db)
+            verif_service.verify_application_documents(app.id, actor_id=applicant_id)
+            self.db.refresh(app)
+
         return ApplicationResponse.model_validate(app)
+
 
     def get_application(self, application_id: uuid.UUID) -> ApplicationResponse:
         app = self.repo.get_by_id(application_id)

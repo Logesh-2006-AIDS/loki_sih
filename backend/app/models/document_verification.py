@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
-from typing import Any, Dict
-from sqlalchemy import String, DateTime, ForeignKey, func
+from typing import Any, Dict, List, Optional
+from sqlalchemy import String, Text, Float, DateTime, ForeignKey, func
 from sqlalchemy import UUID
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -18,17 +18,39 @@ class DocumentVerification(Base):
         UUID(as_uuid=True), ForeignKey("documents.id", ondelete="CASCADE"), nullable=False, index=True
     )
     verification_status: Mapped[str] = mapped_column(String(64), nullable=False)
-    extracted_data: Mapped[Dict[str, Any]] = mapped_column(
+
+    # Phase 3 Authoritative Schema
+    ocr_text: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    extracted_fields: Mapped[Dict[str, Any]] = mapped_column(
         JSONB, nullable=False, default=dict
     )
-    matched_fields: Mapped[Dict[str, Any]] = mapped_column(
+    field_confidences: Mapped[Dict[str, Any]] = mapped_column(
         JSONB, nullable=False, default=dict
     )
-    mismatched_fields: Mapped[Dict[str, Any]] = mapped_column(
+    comparison_results: Mapped[Dict[str, Any]] = mapped_column(
         JSONB, nullable=False, default=dict
     )
+    overall_confidence: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    flags: Mapped[List[Dict[str, Any]]] = mapped_column(
+        JSONB, nullable=False, default=list
+    )
+    processed_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+
+    # Legacy / Compatibility fields (Nullable)
+    extracted_data: Mapped[Optional[Dict[str, Any]]] = mapped_column(
+        JSONB, nullable=True, default=dict
+    )
+    matched_fields: Mapped[Optional[Dict[str, Any]]] = mapped_column(
+        JSONB, nullable=True, default=dict
+    )
+    mismatched_fields: Mapped[Optional[Dict[str, Any]]] = mapped_column(
+        JSONB, nullable=True, default=dict
+    )
+
     verification_source: Mapped[str] = mapped_column(
-        String(64), default="MANUAL", nullable=False
+        String(64), default="AI", nullable=False
     )
     verified_by: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
@@ -41,3 +63,4 @@ class DocumentVerification(Base):
     # Relationships
     document = relationship("Document", back_populates="verifications")
     verifier = relationship("User")
+

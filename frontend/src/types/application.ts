@@ -103,3 +103,34 @@ export interface Application {
   created_at: string;
   updated_at: string;
 }
+
+export interface DocumentVerification {
+  id: string;
+  document_id: string;
+  verification_status: string;
+  ocr_text?: string | null;
+  extracted_fields: Record<string, any>;
+  field_confidences: Record<string, number>;
+  comparison_results: Record<string, any>;
+  overall_confidence?: number | null;
+  flags: Array<{
+    field: string;
+    label?: string;
+    application_value?: string | null;
+    document_value?: string | null;
+    reason?: string;
+    severity?: string;
+  }>;
+  processed_at?: string | null;
+  created_at: string;
+}
+
+export interface ApplicationVerificationSummary {
+  application_id: string;
+  application_status: string;
+  total_documents: number;
+  verified_count: number;
+  flagged_count: number;
+  document_verifications: DocumentVerification[];
+}
+

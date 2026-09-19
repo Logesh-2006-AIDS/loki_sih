@@ -16,6 +16,7 @@ from app.models.user import User
 from app.models.application import Application
 from app.models.document import Document
 from app.schemas.document import DocumentResponse
+from app.schemas.verification import DocumentVerificationResponse
 from app.services.document_service import DocumentService
 from app.repositories.scheme_version_repo import SchemeVersionRepository
 
@@ -234,3 +235,78 @@ def update_document_status(
         actor_id=staff.id,
         reason=data.reason,
     )
+
+
+@router.post(
+    "/{document_id}/verify",
+    response_model=DocumentVerificationResponse,
+    summary="Trigger/re-run AI verification on a document (Staff Only)",
+)
+def trigger_document_verification(
+    document_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    staff: User = Depends(require_roles([UserRole.OFFICER, UserRole.ADMIN])),
+):
+    doc = db.get(Document, document_id)
+    if not doc:
+        raise EntityNotFoundException(f"Document with ID {document_id} not found")
+
+    app = db.get(Application, doc.application_id)
+    if not app:
+        raise EntityNotFoundException("Associated application not found")
+
+    user_role = staff.role
+    if isinstance(user_role, str):
+        user_role = UserRole(user_role)
+
+    if user_role == UserRole.OFFICER:
+        if not check_officer_application_scope(db, staff.id, app.scheme_id, app.form_data or {}):
+            raise ForbiddenException("Officer does not have jurisdiction over this application's documents")
+
+    from app.services.verification_service import DocumentVerificationService
+    verif_service = DocumentVerificationService(db)
+    return verif_service.verify_document(
+        document_id=document_id,
+        actor_id=staff.id,
+        force_rerun=True,
+    )
+
+
+@router.get(
+    "/{document_id}/verification",
+    response_model=DocumentVerificationResponse,
+    summary="Get document verification details & evidence (Staff Only)",
+)
+def get_document_verification(
+    document_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    staff: User = Depends(require_roles([UserRole.OFFICER, UserRole.ADMIN])),
+):
+    doc = db.get(Document, document_id)
+    if not doc:
+        raise EntityNotFoundException(f"Document with ID {document_id} not found")
+
+    app = db.get(Application, doc.application_id)
+    if not app:
+        raise EntityNotFoundException("Associated application not found")
+
+    user_role = staff.role
+    if isinstance(user_role, str):
+        user_role = UserRole(user_role)
+
+    if user_role == UserRole.OFFICER:
+        if not check_officer_application_scope(db, staff.id, app.scheme_id, app.form_data or {}):
+            raise ForbiddenException("Officer does not have jurisdiction over this application's documents")
+
+    from app.models.document_verification import DocumentVerification
+    verif = (
+        db.query(DocumentVerification)
+        .filter(DocumentVerification.document_id == document_id)
+        .order_by(DocumentVerification.created_at.desc())
+        .first()
+    )
+    if not verif:
+        raise EntityNotFoundException("No verification record found for this document")
+
+    return verif
+

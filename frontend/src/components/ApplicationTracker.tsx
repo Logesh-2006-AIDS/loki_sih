@@ -32,10 +32,11 @@ const LIFECYCLE_STEPS: Step[] = [
   },
   {
     id: 'UNDER_AI_VERIFICATION',
-    label: 'Under AI Verification',
-    description: 'Automated verification queue (Phase 3 OCR & eligibility parsing).',
+    label: 'Document Verification',
+    description: 'Automated certificate verification & cross-referencing.',
     icon: Bot,
   },
+
   {
     id: 'UNDER_MANUAL_REVIEW',
     label: 'Under Manual Review',
@@ -180,15 +181,28 @@ export const ApplicationTracker: React.FC<Props> = ({
 
                 {state === 'active' && step.id === 'UNDER_AI_VERIFICATION' && (
                   <div className="mt-3 p-3 rounded-lg bg-blue-50 border border-blue-200 text-blue-900 text-xs flex items-start gap-2">
-                    <Bot className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+                    <Bot className="w-4 h-4 text-blue-600 shrink-0 mt-0.5 animate-pulse" />
                     <div>
-                      <p className="font-semibold">Queued for AI Verification (Phase 3)</p>
+                      <p className="font-semibold">Automated Document Verification in Progress</p>
                       <p className="text-[11px] text-blue-700 mt-0.5">
-                        Your application has been received. In the upcoming phase, document authenticity, OCR text extraction, and merit scoring will be evaluated automatically.
+                        Your submitted certificates are undergoing automated cross-referencing and verification.
                       </p>
                     </div>
                   </div>
                 )}
+
+                {state === 'active' && step.id === 'UNDER_MANUAL_REVIEW' && (
+                  <div className="mt-3 p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-start gap-2">
+                    <UserCheck className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-semibold">Under Scrutiny by Verification Officer</p>
+                      <p className="text-[11px] text-amber-700 mt-0.5">
+                        Your application credentials and verified documents are currently under scrutiny by the Ministry verification desk.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
               </div>
             </div>
           );

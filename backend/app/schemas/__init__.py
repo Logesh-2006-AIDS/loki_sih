@@ -5,6 +5,7 @@ from app.schemas.application import ApplicationBase, ApplicationCreate, Applicat
 from app.schemas.document import DocumentBase, DocumentResponse
 from app.schemas.audit import AuditLogBase, AuditLogCreate, AuditLogResponse
 from app.schemas.notification import NotificationResponse
+from app.schemas.verification import DocumentVerificationResponse, ApplicationVerificationSummaryResponse
 
 __all__ = [
     "LoginRequest",
@@ -28,4 +29,7 @@ __all__ = [
     "AuditLogCreate",
     "AuditLogResponse",
     "NotificationResponse",
+    "DocumentVerificationResponse",
+    "ApplicationVerificationSummaryResponse",
 ]
+

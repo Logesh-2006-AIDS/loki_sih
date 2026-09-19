@@ -1,6 +1,6 @@
 import uuid
 from typing import List, Optional
-from fastapi import APIRouter, Depends, Query, status, File, Form, UploadFile
+from fastapi import APIRouter, Depends, Query, status, File, Form, UploadFile, BackgroundTasks
 from sqlalchemy.orm import Session
 from app.api.deps import (
     get_db,
@@ -18,9 +18,11 @@ from app.schemas.application import (
     ApplicationResponse,
 )
 from app.schemas.document import DocumentResponse
+from app.schemas.verification import ApplicationVerificationSummaryResponse
 from app.services.application_service import ApplicationService
 from app.services.document_service import DocumentService
 from app.repositories.scheme_version_repo import SchemeVersionRepository
+
 
 router = APIRouter()
 
@@ -130,6 +132,23 @@ def update_application_draft(
     )
 
 
+def _run_background_application_verification(application_id: uuid.UUID, actor_id: uuid.UUID):
+    import logging
+    from app.db.session import SessionLocal
+    from app.services.verification_service import DocumentVerificationService
+
+    db = SessionLocal()
+    try:
+        verif_service = DocumentVerificationService(db)
+        verif_service.verify_application_documents(application_id, actor_id=actor_id)
+    except Exception as e:
+        logging.getLogger(__name__).error(
+            f"Background verification failed for application {application_id}: {e}"
+        )
+    finally:
+        db.close()
+
+
 @router.post(
     "/{application_id}/submit",
     response_model=ApplicationResponse,
@@ -137,6 +156,8 @@ def update_application_draft(
 )
 def submit_application(
     application_id: uuid.UUID,
+    background_tasks: BackgroundTasks,
+    sync_verify: bool = Query(False, description="Run verification synchronously in same request"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -150,7 +171,21 @@ def submit_application(
     if user_role == UserRole.APPLICANT and app.applicant_id != current_user.id:
         raise ForbiddenException("Cannot submit application belonging to another user")
 
-    return service.submit_application(application_id, current_user.id)
+    response = service.submit_application(
+        application_id=application_id,
+        applicant_id=current_user.id,
+        trigger_verification=sync_verify,
+    )
+
+    if not sync_verify:
+        background_tasks.add_task(
+            _run_background_application_verification,
+            application_id,
+            current_user.id,
+        )
+
+    return response
+
 
 
 @router.post(
@@ -276,3 +311,95 @@ def update_application_status(
         data=update_data,
         actor_id=staff.id,
     )
+
+
+@router.post(
+    "/{application_id}/verify",
+    response_model=ApplicationVerificationSummaryResponse,
+    summary="Trigger/re-run AI verification for all application documents (Staff Only)",
+)
+def trigger_application_verification(
+    application_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    staff: User = Depends(require_roles([UserRole.OFFICER, UserRole.ADMIN])),
+):
+    app = db.get(Application, application_id)
+    if not app:
+        raise EntityNotFoundException(f"Application with ID {application_id} not found")
+
+    user_role = staff.role
+    if isinstance(user_role, str):
+        user_role = UserRole(user_role)
+
+    if user_role == UserRole.OFFICER:
+        if not check_officer_application_scope(db, staff.id, app.scheme_id, app.form_data or {}):
+            raise ForbiddenException("Officer does not have jurisdiction over this application")
+
+    from app.services.verification_service import DocumentVerificationService
+    verif_service = DocumentVerificationService(db)
+    result = verif_service.verify_application_documents(
+        application_id=application_id,
+        actor_id=staff.id,
+        force_rerun=True,
+    )
+
+    verifications = result["verifications"]
+    verified_count = sum(1 for v in verifications if v.verification_status == "VERIFIED")
+    flagged_count = sum(1 for v in verifications if v.verification_status == "FLAGGED")
+
+    return ApplicationVerificationSummaryResponse(
+        application_id=app.id,
+        application_status=str(app.status.value if hasattr(app.status, "value") else app.status),
+        total_documents=len(app.documents or []),
+        verified_count=verified_count,
+        flagged_count=flagged_count,
+        document_verifications=verifications,
+    )
+
+
+@router.get(
+    "/{application_id}/verifications",
+    response_model=ApplicationVerificationSummaryResponse,
+    summary="Get verification summary and evidence across all application documents (Staff Only)",
+)
+def get_application_verifications(
+    application_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    staff: User = Depends(require_roles([UserRole.OFFICER, UserRole.ADMIN])),
+):
+    app = db.get(Application, application_id)
+    if not app:
+        raise EntityNotFoundException(f"Application with ID {application_id} not found")
+
+    user_role = staff.role
+    if isinstance(user_role, str):
+        user_role = UserRole(user_role)
+
+    if user_role == UserRole.OFFICER:
+        if not check_officer_application_scope(db, staff.id, app.scheme_id, app.form_data or {}):
+            raise ForbiddenException("Officer does not have jurisdiction over this application")
+
+    from app.models.document_verification import DocumentVerification
+    documents = app.documents or []
+    doc_ids = [d.id for d in documents]
+
+    verifications = (
+        db.query(DocumentVerification)
+        .filter(DocumentVerification.document_id.in_(doc_ids))
+        .all()
+        if doc_ids
+        else []
+    )
+
+    verified_count = sum(1 for v in verifications if v.verification_status == "VERIFIED")
+    flagged_count = sum(1 for v in verifications if v.verification_status == "FLAGGED")
+
+    return ApplicationVerificationSummaryResponse(
+        application_id=app.id,
+        application_status=str(app.status.value if hasattr(app.status, "value") else app.status),
+        total_documents=len(documents),
+        verified_count=verified_count,
+        flagged_count=flagged_count,
+        document_verifications=verifications,
+    )
+
