@@ -1,0 +1,53 @@
+services:
+  postgres:
+    image: postgres:18-alpine
+    container_name: loki_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres_secure_password
+      POSTGRES_DB: loki_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d loki_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: loki_backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - PROJECT_NAME=AI-Enabled Scholarship & Fellowship Management System
+      - API_V1_STR=/api/v1
+      - DATABASE_URL=postgresql://postgres:postgres_secure_password@postgres:5432/loki_db
+      - JWT_SECRET_KEY=docker_secret_key_change_in_production_tribal_affairs_sih_2026
+      - STORAGE_PATH=/app/storage
+      - CORS_ORIGINS=["http://localhost:5173", "http://localhost:3000", "http://127.0.0.1:5173"]
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./storage:/app/storage
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: loki_frontend
+    restart: unless-stopped
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:

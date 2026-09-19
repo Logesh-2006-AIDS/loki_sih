@@ -1,0 +1,69 @@
+from enum import Enum
+
+
+class UserRole(str, Enum):
+    APPLICANT = "APPLICANT"
+    OFFICER = "OFFICER"
+    COMMITTEE = "COMMITTEE"
+    ADMIN = "ADMIN"
+
+
+class ApplicationStatus(str, Enum):
+    DRAFT = "DRAFT"
+    SUBMITTED = "SUBMITTED"
+    UNDER_AI_VERIFICATION = "UNDER_AI_VERIFICATION"
+    DEFICIENT = "DEFICIENT"
+    RESUBMITTED = "RESUBMITTED"
+    UNDER_MANUAL_REVIEW = "UNDER_MANUAL_REVIEW"
+    VERIFIED = "VERIFIED"
+    SHORTLISTED = "SHORTLISTED"
+    MERIT_RANKED = "MERIT_RANKED"
+    SELECTED = "SELECTED"
+    WAITLISTED = "WAITLISTED"
+    REJECTED = "REJECTED"
+    FELLOWSHIP_ACTIVE = "FELLOWSHIP_ACTIVE"
+
+
+class DocumentStatus(str, Enum):
+    PENDING = "PENDING"
+    PROCESSING = "PROCESSING"
+    VERIFIED = "VERIFIED"
+    FLAGGED = "FLAGGED"
+    REJECTED = "REJECTED"
+    RESUBMISSION_REQUIRED = "RESUBMISSION_REQUIRED"
+
+
+class NotificationChannel(str, Enum):
+    IN_APP = "IN_APP"
+    EMAIL = "EMAIL"
+    SMS = "SMS"
+
+
+class SelectionResultEnum(str, Enum):
+    SELECTED = "SELECTED"
+    WAITLISTED = "WAITLISTED"
+    REJECTED = "REJECTED"
+
+
+class AuditEntityType(str, Enum):
+    APPLICATION = "APPLICATION"
+    DOCUMENT = "DOCUMENT"
+    USER = "USER"
+    SCHEME = "SCHEME"
+    FELLOWSHIP = "FELLOWSHIP"
+    DEFICIENCY = "DEFICIENCY"
+    SYSTEM = "SYSTEM"
+
+
+class DisbursementStatus(str, Enum):
+    PENDING = "PENDING"
+    PROCESSING = "PROCESSING"
+    DISBURSED = "DISBURSED"
+    SUSPENDED = "SUSPENDED"
+
+
+class SubmissionStatus(str, Enum):
+    PENDING = "PENDING"
+    UNDER_REVIEW = "UNDER_REVIEW"
+    APPROVED = "APPROVED"
+    REJECTED = "REJECTED"
