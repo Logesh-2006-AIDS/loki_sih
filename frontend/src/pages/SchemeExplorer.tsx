@@ -12,6 +12,8 @@ import {
 } from 'lucide-react';
 import { Scheme } from '../types/scheme';
 import { schemeService } from '../services/schemeService';
+import { applicationService } from '../services/applicationService';
+import { authService } from '../services/authService';
 import { SelfEligibilityModal } from '../components/SelfEligibilityModal';
 
 export const SchemeExplorer: React.FC = () => {
@@ -35,6 +37,20 @@ export const SchemeExplorer: React.FC = () => {
       console.error('Failed to load schemes', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleApply = async (schemeId: string) => {
+    try {
+      if (!authService.isAuthenticated()) {
+        await authService.demoLogin('APPLICANT');
+        window.dispatchEvent(new Event('auth-changed'));
+      }
+      const draft = await applicationService.createDraft(schemeId);
+      navigate(`/applications/${draft.id}`);
+    } catch (err: any) {
+      console.error('Failed to start application', err);
+      alert(err.response?.data?.error || 'Unable to start application draft.');
     }
   };
 
@@ -204,21 +220,30 @@ export const SchemeExplorer: React.FC = () => {
                   </div>
 
                   {/* Actions */}
-                  <div className="grid grid-cols-2 gap-3 pt-2 border-t border-slate-100">
+                  <div className="space-y-2 pt-2 border-t border-slate-100">
                     <button
-                      onClick={() => setActiveCheckScheme(s)}
-                      className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-teal-50 hover:bg-teal-100 text-teal-800 text-xs font-semibold border border-teal-200 transition-colors"
+                      onClick={() => handleApply(s.id)}
+                      className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-teal-700 hover:bg-teal-800 text-white text-xs font-bold transition-all shadow-sm"
                     >
-                      <CheckCircle2 className="w-3.5 h-3.5" />
-                      Check Eligibility
-                    </button>
-                    <button
-                      onClick={() => navigate(`/schemes/${s.id}`)}
-                      className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold transition-colors"
-                    >
-                      View Details
+                      <span>Apply Now</span>
                       <ArrowRight className="w-3.5 h-3.5" />
                     </button>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        onClick={() => setActiveCheckScheme(s)}
+                        className="inline-flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-lg bg-teal-50 hover:bg-teal-100 text-teal-800 text-[11px] font-semibold border border-teal-200 transition-colors"
+                      >
+                        <CheckCircle2 className="w-3 h-3" />
+                        Check Eligibility
+                      </button>
+                      <button
+                        onClick={() => navigate(`/schemes/${s.id}`)}
+                        className="inline-flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 text-[11px] font-semibold transition-colors"
+                      >
+                        Details
+                        <ArrowRight className="w-3 h-3" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               );

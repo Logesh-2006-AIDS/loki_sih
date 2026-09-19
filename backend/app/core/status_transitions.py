@@ -5,6 +5,7 @@ from app.core.enums import ApplicationStatus, DocumentStatus
 LEGAL_APPLICATION_TRANSITIONS: Dict[ApplicationStatus, Set[ApplicationStatus]] = {
     ApplicationStatus.DRAFT: {
         ApplicationStatus.SUBMITTED,
+        ApplicationStatus.UNDER_AI_VERIFICATION,
     },
     ApplicationStatus.SUBMITTED: {
         ApplicationStatus.UNDER_AI_VERIFICATION,
@@ -59,10 +60,19 @@ LEGAL_APPLICATION_TRANSITIONS: Dict[ApplicationStatus, Set[ApplicationStatus]] =
 
 LEGAL_DOCUMENT_TRANSITIONS: Dict[DocumentStatus, Set[DocumentStatus]] = {
     DocumentStatus.PENDING: {
+        DocumentStatus.UPLOADED,
         DocumentStatus.PROCESSING,
         DocumentStatus.VERIFIED,
         DocumentStatus.FLAGGED,
         DocumentStatus.REJECTED,
+    },
+    DocumentStatus.UPLOADED: {
+        DocumentStatus.PENDING,
+        DocumentStatus.PROCESSING,
+        DocumentStatus.VERIFIED,
+        DocumentStatus.FLAGGED,
+        DocumentStatus.REJECTED,
+        DocumentStatus.RESUBMISSION_REQUIRED,
     },
     DocumentStatus.PROCESSING: {
         DocumentStatus.VERIFIED,

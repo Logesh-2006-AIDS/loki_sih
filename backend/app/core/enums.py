@@ -26,6 +26,7 @@ class ApplicationStatus(str, Enum):
 
 class DocumentStatus(str, Enum):
     PENDING = "PENDING"
+    UPLOADED = "UPLOADED"
     PROCESSING = "PROCESSING"
     VERIFIED = "VERIFIED"
     FLAGGED = "FLAGGED"

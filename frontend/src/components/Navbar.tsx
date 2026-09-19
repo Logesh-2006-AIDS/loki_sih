@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { BookOpen, Settings, UserCheck, LogOut } from 'lucide-react';
+import { BookOpen, Settings, UserCheck, LogOut, FileText } from 'lucide-react';
 import { authService, DEMO_CREDENTIALS } from '../services/authService';
 import { UserProfile } from '../types/scheme';
 
@@ -68,6 +68,17 @@ export const Navbar: React.FC = () => {
           >
             <BookOpen className="w-4 h-4" />
             Scheme Explorer
+          </Link>
+          <Link
+            to="/applicant/dashboard"
+            className={`px-3 py-1.5 rounded-md transition-colors flex items-center gap-1.5 ${
+              location.pathname.startsWith('/applicant') || location.pathname.startsWith('/applications')
+                ? 'bg-teal-700 text-white'
+                : 'text-slate-300 hover:text-white hover:bg-slate-800'
+            }`}
+          >
+            <FileText className="w-4 h-4" />
+            My Applications
           </Link>
           <Link
             to="/admin/schemes"

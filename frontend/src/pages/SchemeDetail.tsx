@@ -10,6 +10,8 @@ import {
 } from 'lucide-react';
 import { SchemeDetail as SchemeDetailType, SchemeVersion } from '../types/scheme';
 import { schemeService } from '../services/schemeService';
+import { applicationService } from '../services/applicationService';
+import { authService } from '../services/authService';
 import { SelfEligibilityModal } from '../components/SelfEligibilityModal';
 
 export const SchemeDetail: React.FC = () => {
@@ -22,6 +24,21 @@ export const SchemeDetail: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'overview' | 'eligibility' | 'documents' | 'versions'>('overview');
   const [isCheckModalOpen, setIsCheckModalOpen] = useState(false);
   const [selectedVersionForCheck, setSelectedVersionForCheck] = useState<SchemeVersion | null>(null);
+
+  const handleApply = async () => {
+    if (!scheme) return;
+    try {
+      if (!authService.isAuthenticated()) {
+        await authService.demoLogin('APPLICANT');
+        window.dispatchEvent(new Event('auth-changed'));
+      }
+      const draft = await applicationService.createDraft(scheme.id);
+      navigate(`/applications/${draft.id}`);
+    } catch (err: any) {
+      console.error('Failed to start application', err);
+      alert(err.response?.data?.error || 'Unable to start application draft.');
+    }
+  };
 
   useEffect(() => {
     if (schemeId) {
@@ -115,17 +132,23 @@ export const SchemeDetail: React.FC = () => {
               </p>
             </div>
 
-            {/* Quick Action Button */}
-            <div className="shrink-0">
+            {/* Quick Action Buttons */}
+            <div className="shrink-0 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
               <button
                 onClick={() => {
                   setSelectedVersionForCheck(activeV || null);
                   setIsCheckModalOpen(true);
                 }}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-teal-700 hover:bg-teal-800 text-white text-xs sm:text-sm font-bold shadow-md hover:shadow-lg transition-all"
+                className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-teal-50 hover:bg-teal-100 text-teal-800 text-xs sm:text-sm font-bold border border-teal-200 transition-all shadow-sm"
               >
                 <CheckCircle2 className="w-4 h-4" />
-                Check My Eligibility
+                Check Eligibility
+              </button>
+              <button
+                onClick={handleApply}
+                className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-teal-700 hover:bg-teal-800 text-white text-xs sm:text-sm font-bold shadow-md hover:shadow-lg transition-all"
+              >
+                <span>Apply for Fellowship</span>
               </button>
             </div>
           </div>

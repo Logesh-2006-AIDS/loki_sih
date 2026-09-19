@@ -5,6 +5,8 @@ import { Footer } from './components/Footer';
 import { SchemeExplorer } from './pages/SchemeExplorer';
 import { SchemeDetail } from './pages/SchemeDetail';
 import { SchemeAdmin } from './pages/admin/SchemeAdmin';
+import { ApplicantDashboard } from './pages/applicant/ApplicantDashboard';
+import { ApplicationWizard } from './pages/applicant/ApplicationWizard';
 
 export const App: React.FC = () => {
   return (
@@ -17,6 +19,8 @@ export const App: React.FC = () => {
             <Route path="/" element={<SchemeExplorer />} />
             <Route path="/schemes/:schemeId" element={<SchemeDetail />} />
             <Route path="/admin/schemes" element={<SchemeAdmin />} />
+            <Route path="/applicant/dashboard" element={<ApplicantDashboard />} />
+            <Route path="/applications/:applicationId" element={<ApplicationWizard />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </div>
