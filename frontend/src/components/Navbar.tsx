@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { BookOpen, Settings, UserCheck, LogOut, FileText, ClipboardCheck, Award, BarChart3, CreditCard } from 'lucide-react';
+import { BookOpen, Settings, UserCheck, LogOut, FileText, ClipboardCheck, Award, BarChart3, CreditCard, Compass } from 'lucide-react';
 import { authService, DEMO_CREDENTIALS } from '../services/authService';
 import { UserProfile } from '../types/scheme';
 
-export const Navbar: React.FC = () => {
+interface NavbarProps {
+  onOpenTour?: () => void;
+}
+
+export const Navbar: React.FC<NavbarProps> = ({ onOpenTour }) => {
   const location = useLocation();
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
   const [loadingRole, setLoadingRole] = useState<string | null>(null);
@@ -47,7 +51,7 @@ export const Navbar: React.FC = () => {
                 Ministry of Tribal Affairs
               </h1>
               <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-teal-900 text-teal-200 border border-teal-700">
-                Phase 8 Fellowship & DBT Management
+                SIH 2026 Grand Finale Release (v1.0.0)
               </span>
             </div>
             <p className="text-xs text-slate-400">
@@ -176,6 +180,13 @@ export const Navbar: React.FC = () => {
       <div className="bg-slate-950 border-t border-slate-800 px-4 py-2">
         <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3 text-xs">
           <div className="flex items-center gap-2">
+            <button
+              onClick={onOpenTour}
+              className="px-2.5 py-1 rounded bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 text-white font-bold text-xs flex items-center gap-1.5 shadow transition-all hover:scale-105"
+            >
+              <Compass className="w-3.5 h-3.5" />
+              SIH Evaluation Tour
+            </button>
             <span className="px-2 py-0.5 rounded bg-amber-950/80 border border-amber-800 text-amber-300 font-semibold uppercase tracking-wider text-[10px]">
               Prototype Demo Mode
             </span>

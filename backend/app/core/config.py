@@ -19,6 +19,14 @@ class Settings(BaseSettings):
     # File Storage
     STORAGE_PATH: str = "./storage"
 
+    # Environment & Deployment Mode
+    ENVIRONMENT: str = "development"
+    EXPECTED_ALEMBIC_HEAD: str = "0008_phase8_fellowships"
+
+    # Security & Guardrail Limits
+    MAX_REQUEST_BODY_BYTES: int = 25 * 1024 * 1024  # 25 MB global HTTP request defense
+    RATE_LIMIT_LOGIN_PER_MINUTE: int = 30  # Standalone single-instance rate limit
+
     # CORS Origins
     CORS_ORIGINS: Union[List[str], str] = [
         "http://localhost:5173",

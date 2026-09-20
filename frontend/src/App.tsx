@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
+import { SIHDemoTourModal } from './components/demo/SIHDemoTourModal';
 import { SchemeExplorer } from './pages/SchemeExplorer';
 import { SchemeDetail } from './pages/SchemeDetail';
 import { SchemeAdmin } from './pages/admin/SchemeAdmin';
@@ -20,10 +21,19 @@ import { OfficerFellowshipWorkbench } from './pages/officer/OfficerFellowshipWor
 import { AdminDisbursementDesk } from './pages/admin/AdminDisbursementDesk';
 
 export const App: React.FC = () => {
+  const [isTourOpen, setIsTourOpen] = useState(false);
+
+  useEffect(() => {
+    const handleOpenTour = () => setIsTourOpen(true);
+    window.addEventListener('open-sih-tour', handleOpenTour);
+    return () => window.removeEventListener('open-sih-tour', handleOpenTour);
+  }, []);
+
   return (
     <BrowserRouter>
       <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900 font-sans">
-        <Navbar />
+        <Navbar onOpenTour={() => setIsTourOpen(true)} />
+        <SIHDemoTourModal isOpen={isTourOpen} onClose={() => setIsTourOpen(false)} />
 
         <div className="flex-1">
           <Routes>

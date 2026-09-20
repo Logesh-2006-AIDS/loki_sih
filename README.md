@@ -1,8 +1,10 @@
 # Ministry of Tribal Affairs - AI-Enabled Scholarship & Fellowship Management System
 
+> **SIH 2026 Evaluation Prototype Notice:** This system is an evaluation-ready prototype engineered for the Smart India Hackathon 2026 Grand Finale. External integrations (such as the PFMS Direct Benefit Transfer gateway and OCR ingestion pipelines) operate in deterministic standalone simulated mode with synthetic test dossiers (`DEMO-*`). No live government funds or sensitive citizen credentials are used.
+
 ## Project Overview
 
-The Ministry of Tribal Affairs (MoTA) AI-Enabled Scholarship & Fellowship Management System is an enterprise-grade digital portal engineered to automate, streamline, and secure the end-to-end lifecycle of government scholarship schemes for Scheduled Tribe (ST) students across India.
+The Ministry of Tribal Affairs (MoTA) AI-Enabled Scholarship & Fellowship Management System is an evaluation-grade digital portal engineered to automate, streamline, and secure the end-to-end lifecycle of scholarship schemes for Scheduled Tribe (ST) students across India.
 
 The platform provides an integrated environment for tribal scholars, desk scrutiny officers, selection committees, and ministry administrators. It pairs automated document optical character recognition (OCR) and rule verification engines with a human-in-the-loop desk scrutiny workflow, strict role-based access control, tamper-evident audit logging, and closed-loop deficiency resolution.
 
@@ -413,14 +415,24 @@ Administrator
 
 admin@demo.gov.in
 Demo@12345	Manage schemes and versions, lock configurations, inspect audit logs
-Running Verification Tests
-To verify backend integrity and all 89 unit/integration tests:
+To verify backend integrity and all 141 unit/integration tests:
 
-bash
-cd d:/loki/loki_sih/backend
-python -m pytest tests/ -v
-To verify frontend TypeScript types and build output:
+```bash
+cd backend
+python -m pytest tests/ -q
+```
 
-bash
-cd d:/loki/loki_sih/frontend
+To verify frontend TypeScript compilation and production bundling:
+
+```bash
+cd frontend
 npm run build
+```
+
+---
+
+## Phase 9 Hardening & SIH Evaluation Documentation
+
+- [Deployment & Security Hardening Guide](docs/deployment.md)
+- [SIH 2026 Grand Finale Evaluation & Demo Script](docs/sih_demo_guide.md)
+
