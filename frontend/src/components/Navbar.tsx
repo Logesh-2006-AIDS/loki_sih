@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { BookOpen, Settings, UserCheck, LogOut, FileText, ClipboardCheck, Award, BarChart3 } from 'lucide-react';
+import { BookOpen, Settings, UserCheck, LogOut, FileText, ClipboardCheck, Award, BarChart3, CreditCard } from 'lucide-react';
 import { authService, DEMO_CREDENTIALS } from '../services/authService';
 import { UserProfile } from '../types/scheme';
 
@@ -47,7 +47,7 @@ export const Navbar: React.FC = () => {
                 Ministry of Tribal Affairs
               </h1>
               <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-teal-900 text-teal-200 border border-teal-700">
-                Phase 7 Analytics & Monitoring
+                Phase 8 Fellowship & DBT Management
               </span>
             </div>
             <p className="text-xs text-slate-400">
@@ -72,7 +72,7 @@ export const Navbar: React.FC = () => {
           <Link
             to="/applicant/dashboard"
             className={`px-3 py-1.5 rounded-md transition-colors flex items-center gap-1.5 ${
-              location.pathname.startsWith('/applicant') || location.pathname.startsWith('/applications')
+              location.pathname.startsWith('/applicant/dashboard') || location.pathname.startsWith('/applications')
                 ? 'bg-teal-700 text-white'
                 : 'text-slate-300 hover:text-white hover:bg-slate-800'
             }`}
@@ -80,17 +80,43 @@ export const Navbar: React.FC = () => {
             <FileText className="w-4 h-4" />
             My Applications
           </Link>
+          {currentUser?.role === 'APPLICANT' && (
+            <Link
+              to="/applicant/fellowship"
+              className={`px-3 py-1.5 rounded-md transition-colors flex items-center gap-1.5 ${
+                location.pathname === '/applicant/fellowship'
+                  ? 'bg-emerald-700 text-white'
+                  : 'text-slate-300 hover:text-white hover:bg-slate-800'
+              }`}
+            >
+              <Award className="w-4 h-4" />
+              Fellowship Portal
+            </Link>
+          )}
           {(currentUser?.role === 'OFFICER' || currentUser?.role === 'ADMIN') && (
             <Link
               to="/officer/dashboard"
               className={`px-3 py-1.5 rounded-md transition-colors flex items-center gap-1.5 ${
-                location.pathname.startsWith('/officer')
+                location.pathname === '/officer/dashboard'
                   ? 'bg-teal-700 text-white'
                   : 'text-slate-300 hover:text-white hover:bg-slate-800'
               }`}
             >
               <ClipboardCheck className="w-4 h-4" />
               Officer Queue
+            </Link>
+          )}
+          {(currentUser?.role === 'OFFICER' || currentUser?.role === 'ADMIN') && (
+            <Link
+              to="/officer/fellowships"
+              className={`px-3 py-1.5 rounded-md transition-colors flex items-center gap-1.5 ${
+                location.pathname === '/officer/fellowships'
+                  ? 'bg-teal-700 text-white'
+                  : 'text-slate-300 hover:text-white hover:bg-slate-800'
+              }`}
+            >
+              <BookOpen className="w-4 h-4" />
+              Fellowship Scrutiny
             </Link>
           )}
           {(currentUser?.role === 'COMMITTEE' || currentUser?.role === 'ADMIN') && (
@@ -104,6 +130,19 @@ export const Navbar: React.FC = () => {
             >
               <Award className="w-4 h-4" />
               Committee Workbench
+            </Link>
+          )}
+          {currentUser?.role === 'ADMIN' && (
+            <Link
+              to="/admin/disbursements"
+              className={`px-3 py-1.5 rounded-md transition-colors flex items-center gap-1.5 ${
+                location.pathname === '/admin/disbursements'
+                  ? 'bg-indigo-700 text-white'
+                  : 'text-slate-300 hover:text-white hover:bg-slate-800'
+              }`}
+            >
+              <CreditCard className="w-4 h-4" />
+              Disbursement Desk
             </Link>
           )}
           {currentUser?.role === 'ADMIN' && (
@@ -128,7 +167,7 @@ export const Navbar: React.FC = () => {
             }`}
           >
             <Settings className="w-4 h-4" />
-            Admin Scheme Console
+            Admin Schemes
           </Link>
         </nav>
       </div>

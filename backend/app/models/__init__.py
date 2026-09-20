@@ -8,7 +8,7 @@ from app.models.document_verification import DocumentVerification
 from app.models.deficiency import Deficiency
 from app.models.merit_score import MeritScore
 from app.models.selection_result import SelectionResult
-from app.models.fellowship import FellowshipRecord, RenewalSubmission, ProgressReport
+from app.models.fellowship import FellowshipRecord, RenewalSubmission, ProgressReport, DisbursementInstallment
 from app.models.officer_assignment import OfficerAssignment
 from app.models.notification import Notification
 from app.models.audit_log import AuditLog
@@ -30,6 +30,7 @@ __all__ = [
     "FellowshipRecord",
     "RenewalSubmission",
     "ProgressReport",
+    "DisbursementInstallment",
     "OfficerAssignment",
     "Notification",
     "AuditLog",

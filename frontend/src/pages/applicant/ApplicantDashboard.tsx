@@ -166,6 +166,14 @@ export const ApplicantDashboard: React.FC = () => {
         </span>
       );
     }
+    if (status === 'FELLOWSHIP_ACTIVE') {
+      return (
+        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-900 border border-emerald-300 flex items-center gap-1">
+          <Award className="w-3 h-3 text-emerald-700" />
+          FELLOWSHIP ACTIVE
+        </span>
+      );
+    }
     return (
       <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-800 border border-slate-200">
         {status.replace(/_/g, ' ')}
@@ -215,6 +223,32 @@ export const ApplicantDashboard: React.FC = () => {
             referenceId={deficientApps[0].reference_id}
             deficiencyCount={deficientApps.length}
           />
+        )}
+
+        {/* Fellowship Award Lifecycle Banner (Phase 8) */}
+        {applications.some((a) => a.status === 'FELLOWSHIP_ACTIVE' || a.status === 'SELECTED') && (
+          <div className="bg-gradient-to-r from-emerald-900 to-teal-800 text-white p-5 rounded-2xl shadow-sm border border-emerald-700 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-emerald-700/60 flex items-center justify-center flex-shrink-0 text-white">
+                <Award className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="font-bold text-sm text-white">National Fellowship Award Lifecycle</h3>
+                <p className="text-xs text-emerald-100">
+                  {applications.some((a) => a.status === 'FELLOWSHIP_ACTIVE')
+                    ? 'Your fellowship is active! Access your scholar desk to view DBT disbursements, submit renewals, and upload progress reports.'
+                    : 'Your application has been selected for award! Submit your acceptance and bank account details.'}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => navigate('/applicant/fellowship')}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white text-emerald-900 text-xs font-black hover:bg-emerald-50 transition-colors shadow-sm whitespace-nowrap"
+            >
+              <span>{applications.some((a) => a.status === 'FELLOWSHIP_ACTIVE') ? 'Fellowship Desk' : 'Accept Fellowship'}</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
         )}
 
         {/* Metric Summary Cards */}
@@ -345,6 +379,26 @@ export const ApplicantDashboard: React.FC = () => {
                     </div>
 
                     <div className="shrink-0 flex items-center gap-2 flex-wrap">
+                      {app.status === 'FELLOWSHIP_ACTIVE' && (
+                        <button
+                          type="button"
+                          onClick={() => navigate('/applicant/fellowship')}
+                          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-bold transition-all shadow-sm bg-emerald-700 hover:bg-emerald-800 text-white"
+                        >
+                          <Award className="w-3.5 h-3.5" />
+                          <span>Fellowship Portal</span>
+                        </button>
+                      )}
+                      {app.status === 'SELECTED' && (
+                        <button
+                          type="button"
+                          onClick={() => navigate('/applicant/fellowship')}
+                          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-bold transition-all shadow-sm bg-emerald-600 hover:bg-emerald-700 text-white"
+                        >
+                          <Award className="w-3.5 h-3.5" />
+                          <span>Accept Award</span>
+                        </button>
+                      )}
                       {['SELECTED', 'WAITLISTED', 'REJECTED'].includes(app.status) && (
                         <button
                           type="button"

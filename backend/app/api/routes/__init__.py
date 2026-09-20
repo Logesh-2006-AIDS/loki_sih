@@ -13,6 +13,8 @@ from app.api.routes import (
     committee,
     merit,
     analytics,
+    fellowship,
+    disbursements,
 )
 
 api_router = APIRouter()
@@ -30,4 +32,6 @@ api_router.include_router(officer.router, prefix="/officer", tags=["Officer Scru
 api_router.include_router(committee.router, prefix="/committee", tags=["Committee Scrutiny & Selection"])
 api_router.include_router(merit.router, prefix="/merit", tags=["Merit Scoring & Ranking"])
 api_router.include_router(analytics.router, prefix="/analytics", tags=["Analytics & Monitoring"])
+api_router.include_router(fellowship.router, prefix="/fellowships", tags=["Fellowships"])
+api_router.include_router(disbursements.router, prefix="/disbursements", tags=["Disbursements"])
 

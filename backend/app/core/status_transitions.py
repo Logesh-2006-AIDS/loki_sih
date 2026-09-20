@@ -1,5 +1,5 @@
 from typing import Dict, Set
-from app.core.enums import ApplicationStatus, DocumentStatus
+from app.core.enums import ApplicationStatus, DocumentStatus, FellowshipStatus, DisbursementStatus
 
 
 LEGAL_APPLICATION_TRANSITIONS: Dict[ApplicationStatus, Set[ApplicationStatus]] = {
@@ -114,3 +114,68 @@ def can_transition_document(
     if current == next_status:
         return True
     return next_status in LEGAL_DOCUMENT_TRANSITIONS.get(current, set())
+
+
+LEGAL_FELLOWSHIP_TRANSITIONS: Dict[FellowshipStatus, Set[FellowshipStatus]] = {
+    FellowshipStatus.ACTIVE: {
+        FellowshipStatus.UNDER_RENEWAL,
+        FellowshipStatus.SUSPENDED,
+        FellowshipStatus.COMPLETED,
+        FellowshipStatus.TERMINATED,
+    },
+    FellowshipStatus.UNDER_RENEWAL: {
+        FellowshipStatus.ACTIVE,       # Renewal approved -> current_year advances
+        FellowshipStatus.SUSPENDED,    # Suspended due to deficiency timeout/failure
+        FellowshipStatus.TERMINATED,   # Forfeited or disqualified
+    },
+    FellowshipStatus.SUSPENDED: {
+        FellowshipStatus.ACTIVE,       # Reinstated strictly by ADMIN
+        FellowshipStatus.TERMINATED,   # Permanent revocation
+    },
+    FellowshipStatus.COMPLETED: set(), # Terminal
+    FellowshipStatus.TERMINATED: set(),# Terminal
+}
+
+
+def can_transition_fellowship(
+    current: FellowshipStatus, next_status: FellowshipStatus
+) -> bool:
+    if current == next_status:
+        return True
+    return next_status in LEGAL_FELLOWSHIP_TRANSITIONS.get(current, set())
+
+
+LEGAL_DISBURSEMENT_TRANSITIONS: Dict[DisbursementStatus, Set[DisbursementStatus]] = {
+    DisbursementStatus.SCHEDULED: {
+        DisbursementStatus.PENDING_APPROVAL,
+        DisbursementStatus.APPROVED_FOR_PAYMENT,
+        DisbursementStatus.CANCELLED,
+    },
+    DisbursementStatus.PENDING_APPROVAL: {
+        DisbursementStatus.APPROVED_FOR_PAYMENT,
+        DisbursementStatus.CANCELLED,
+    },
+    DisbursementStatus.APPROVED_FOR_PAYMENT: {
+        DisbursementStatus.PROCESSING,
+        DisbursementStatus.CANCELLED,
+    },
+    DisbursementStatus.PROCESSING: {
+        DisbursementStatus.SUCCESS,
+        DisbursementStatus.FAILED,
+    },
+    DisbursementStatus.FAILED: {
+        DisbursementStatus.PROCESSING,       # Retry dispatch (retry_count < 3)
+        DisbursementStatus.RETRY_EXHAUSTED,  # When retry limit (3/3) reached
+    },
+    DisbursementStatus.SUCCESS: set(),         # Terminal ledger entry
+    DisbursementStatus.CANCELLED: set(),       # Terminal
+    DisbursementStatus.RETRY_EXHAUSTED: set(), # Terminal administrative lock
+}
+
+
+def can_transition_disbursement(
+    current: DisbursementStatus, next_status: DisbursementStatus
+) -> bool:
+    if current == next_status:
+        return True
+    return next_status in LEGAL_DISBURSEMENT_TRANSITIONS.get(current, set())
