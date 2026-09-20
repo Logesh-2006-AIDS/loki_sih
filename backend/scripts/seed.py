@@ -19,6 +19,7 @@ from app.db.session import SessionLocal
 from app.models.user import User
 from app.models.scheme import Scheme
 from app.models.scheme_version import SchemeVersion
+from app.models.officer_assignment import OfficerAssignment
 from app.core.enums import UserRole
 from app.core.security import get_password_hash
 from app.repositories.audit_repo import AuditRepository
@@ -844,6 +845,25 @@ def seed_database():
                     details={"email": user.email, "role": str(user.role.value)},
                 )
                 print(f"  [+] Created User: {user.email} (Role: {user.role.value})")
+
+        # Explicit global assignment for Demo Officer (Phase 4 scope requirement)
+        officer_user = db.query(User).filter(User.email == "officer@demo.gov.in").first()
+        if officer_user:
+            existing_assignment = (
+                db.query(OfficerAssignment)
+                .filter(OfficerAssignment.officer_id == officer_user.id)
+                .first()
+            )
+            if not existing_assignment:
+                global_assign = OfficerAssignment(
+                    officer_id=officer_user.id,
+                    state=None,
+                    scheme_id=None,
+                    is_active=True,
+                )
+                db.add(global_assign)
+                db.commit()
+                print(f"  [+] Assigned Global Desk Scope to: {officer_user.email}")
 
         # Seed Demo Schemes & SchemeVersion records
         print("\n[2/2] Checking and seeding Demo Schemes & Scheme Versions...")

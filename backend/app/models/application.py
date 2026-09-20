@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 from typing import Any, Dict
-from sqlalchemy import String, Float, DateTime, Enum, ForeignKey, func
+from sqlalchemy import String, Float, DateTime, Enum, ForeignKey, func, Text
 from sqlalchemy import UUID
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -42,6 +42,13 @@ class Application(Base):
     merit_score: Mapped[float | None] = mapped_column(Float, nullable=True)
     submitted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
+    # Phase 4 Human Scrutiny fields
+    scrutiny_remarks: Mapped[str | None] = mapped_column(Text, nullable=True)
+    scrutiny_officer_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    scrutiny_completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
@@ -53,7 +60,8 @@ class Application(Base):
     )
 
     # Relationships
-    applicant = relationship("User", back_populates="applications")
+    applicant = relationship("User", foreign_keys=[applicant_id], back_populates="applications")
+    scrutiny_officer = relationship("User", foreign_keys=[scrutiny_officer_id])
     scheme = relationship("Scheme", back_populates="applications")
     scheme_version = relationship("SchemeVersion", back_populates="applications")
     documents = relationship("Document", back_populates="application", cascade="all, delete-orphan")

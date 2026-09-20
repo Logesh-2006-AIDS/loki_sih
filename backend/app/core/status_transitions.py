@@ -14,9 +14,8 @@ LEGAL_APPLICATION_TRANSITIONS: Dict[ApplicationStatus, Set[ApplicationStatus]] =
         ApplicationStatus.REJECTED,
     },
     ApplicationStatus.UNDER_AI_VERIFICATION: {
-        ApplicationStatus.VERIFIED,
-        ApplicationStatus.DEFICIENT,
         ApplicationStatus.UNDER_MANUAL_REVIEW,
+        ApplicationStatus.DEFICIENT,
         ApplicationStatus.REJECTED,
     },
     ApplicationStatus.DEFICIENT: {
@@ -88,11 +87,18 @@ LEGAL_DOCUMENT_TRANSITIONS: Dict[DocumentStatus, Set[DocumentStatus]] = {
     DocumentStatus.RESUBMISSION_REQUIRED: {
         DocumentStatus.PENDING,
         DocumentStatus.PROCESSING,
+        DocumentStatus.VERIFIED,
+        DocumentStatus.REJECTED,
     },
     DocumentStatus.VERIFIED: {
-        DocumentStatus.FLAGGED,  # In case re-audit detects anomaly
+        DocumentStatus.FLAGGED,
+        DocumentStatus.RESUBMISSION_REQUIRED,
+        DocumentStatus.REJECTED,
     },
-    DocumentStatus.REJECTED: set(),
+    DocumentStatus.REJECTED: {
+        DocumentStatus.VERIFIED,
+        DocumentStatus.RESUBMISSION_REQUIRED,
+    },
 }
 
 

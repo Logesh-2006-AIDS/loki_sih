@@ -8,6 +8,7 @@ from app.api.routes import (
     documents,
     notifications,
     audit,
+    officer,
 )
 
 api_router = APIRouter()
@@ -20,3 +21,5 @@ api_router.include_router(applications.router, prefix="/applications", tags=["Ap
 api_router.include_router(documents.router, prefix="/documents", tags=["Documents"])
 api_router.include_router(notifications.router, prefix="/notifications", tags=["Notifications"])
 api_router.include_router(audit.router, prefix="/audit", tags=["Audit Logs"])
+api_router.include_router(officer.router, prefix="/officer", tags=["Officer Scrutiny"])
+

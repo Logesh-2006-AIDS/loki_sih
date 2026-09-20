@@ -81,9 +81,20 @@ def check_officer_application_scope(
 ) -> bool:
     """
     Validates whether an officer has jurisdiction over an application.
-    If the officer has no active assignments, they operate with general desk scope.
-    If they have active assignments, the application must match their assigned scheme or state.
+    Security Invariant:
+      - ADMIN users have system-wide access.
+      - Officers with NO active assignments are DENIED access (no implicit unrestricted access).
+      - Explicit global scope is represented by an assignment with both scheme_id=None and state=None.
+      - Scoped assignments require matching scheme and/or state.
     """
+    user = db.get(User, officer_id)
+    if user:
+        role = user.role
+        if isinstance(role, str):
+            role = UserRole(role)
+        if role == UserRole.ADMIN:
+            return True
+
     from app.models.officer_assignment import OfficerAssignment
     assignments = (
         db.query(OfficerAssignment)
@@ -94,9 +105,13 @@ def check_officer_application_scope(
         .all()
     )
     if not assignments:
-        return True
+        return False
 
     for assign in assignments:
+        # Explicit global scope assignment: both scheme_id and state are None
+        if assign.scheme_id is None and assign.state is None:
+            return True
+
         scheme_match = (assign.scheme_id is None) or (assign.scheme_id == app_scheme_id)
         state_match = True
         if assign.state:
@@ -108,3 +123,4 @@ def check_officer_application_scope(
         if scheme_match and state_match:
             return True
     return False
+

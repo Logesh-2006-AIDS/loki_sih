@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 from typing import Any, Dict, List, Optional
-from sqlalchemy import String, Text, Float, DateTime, ForeignKey, func
+from sqlalchemy import String, Text, Float, DateTime, ForeignKey, func, Boolean
 from sqlalchemy import UUID
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -37,6 +37,12 @@ class DocumentVerification(Base):
     processed_at: Mapped[Optional[datetime]] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
+
+    # Phase 4 Human Scrutiny & AI Override Schema
+    officer_decision: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)
+    officer_remarks: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    ai_override: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    override_reason: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     # Legacy / Compatibility fields (Nullable)
     extracted_data: Mapped[Optional[Dict[str, Any]]] = mapped_column(

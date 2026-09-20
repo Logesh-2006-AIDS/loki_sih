@@ -35,6 +35,11 @@ class User(Base):
     )
 
     # Relationships
-    applications = relationship("Application", back_populates="applicant", cascade="all, delete-orphan")
+    applications = relationship(
+        "Application",
+        foreign_keys="[Application.applicant_id]",
+        back_populates="applicant",
+        cascade="all, delete-orphan",
+    )
     notifications = relationship("Notification", back_populates="user", cascade="all, delete-orphan")
     assignments = relationship("OfficerAssignment", back_populates="officer", cascade="all, delete-orphan")
