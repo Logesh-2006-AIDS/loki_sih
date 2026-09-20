@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 from typing import Any, Dict
-from sqlalchemy import String, Float, DateTime, Enum, ForeignKey, func, Text
+from sqlalchemy import String, Integer, Float, DateTime, Enum, ForeignKey, func, Text
 from sqlalchemy import UUID
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -48,6 +48,10 @@ class Application(Base):
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True
     )
     scrutiny_completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    # Phase 5 Resubmission fields
+    resubmission_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    resubmitted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False

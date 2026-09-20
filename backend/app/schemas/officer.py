@@ -68,6 +68,12 @@ class OfficerDocumentScrutinyItem(BaseModel):
     verified_by_name: Optional[str] = None
     verified_at: Optional[datetime] = None
 
+    # Phase 5 Lineage & History
+    version: int = 1
+    is_current: bool = True
+    parent_document_id: Optional[uuid.UUID] = None
+    history: List[Dict[str, Any]] = Field(default_factory=list)
+
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -76,6 +82,9 @@ class OfficerApplicationScrutinyResponse(BaseModel):
     reference_id: str
     status: str
     submitted_at: Optional[datetime] = None
+    resubmission_count: int = 0
+    resubmitted_at: Optional[datetime] = None
+    deficiencies_history: List[Dict[str, Any]] = Field(default_factory=list)
 
     # Applicant details for scrutiny screen
     applicant_id: uuid.UUID

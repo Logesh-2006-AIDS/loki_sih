@@ -34,6 +34,12 @@ export const DocumentScrutinyCard: React.FC<DocumentScrutinyCardProps> = ({
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [isOverrideModalOpen, setIsOverrideModalOpen] = useState(false);
   const [showOcrText, setShowOcrText] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  const [historyPreviewDoc, setHistoryPreviewDoc] = useState<{
+    id: string;
+    original_filename: string;
+    mime_type: string;
+  } | null>(null);
 
   // Decision form state
   const [selectedDecision, setSelectedDecision] = useState<
@@ -151,10 +157,18 @@ export const DocumentScrutinyCard: React.FC<DocumentScrutinyCardProps> = ({
             <FileText className="w-4 h-4" />
           </div>
           <div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <h3 className="font-bold text-slate-900 text-sm sm:text-base capitalize">
                 {document.document_type.replace(/_/g, ' ')}
               </h3>
+              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-200 text-slate-800">
+                v{document.version || 1}
+              </span>
+              {document.version && document.version > 1 && (
+                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-100 text-purple-800 border border-purple-200">
+                  Replacement
+                </span>
+              )}
               {getDocStatusBadge()}
             </div>
             <p className="text-xs text-slate-500 font-mono mt-0.5">
@@ -236,6 +250,69 @@ export const DocumentScrutinyCard: React.FC<DocumentScrutinyCardProps> = ({
             </div>
           )}
         </div>
+
+        {/* Document Revision History (Phase 5 Lineage) */}
+        {document.history && document.history.length > 0 && (
+          <div className="rounded-lg border border-purple-200 bg-purple-50/50 p-3.5">
+            <button
+              type="button"
+              onClick={() => setShowHistory(!showHistory)}
+              className="w-full flex items-center justify-between text-xs font-bold text-purple-950 hover:text-purple-800"
+            >
+              <div className="flex items-center gap-2">
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-purple-200 text-purple-900">
+                  {document.history.length} Prior Version{document.history.length > 1 ? 's' : ''}
+                </span>
+                <span>Document Revision History & Superseded Audits</span>
+              </div>
+              {showHistory ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            </button>
+
+            {showHistory && (
+              <div className="mt-3 space-y-2 pt-2 border-t border-purple-200">
+                {document.history.map((hist) => (
+                  <div
+                    key={hist.id}
+                    className="p-3 bg-white rounded-lg border border-purple-100 text-xs text-slate-700 flex flex-col sm:flex-row sm:items-center justify-between gap-2 shadow-2xs"
+                  >
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-slate-900">v{hist.version}</span>
+                        <span className="font-mono text-slate-500">{hist.original_filename}</span>
+                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                          {hist.status}
+                        </span>
+                      </div>
+                      <div className="mt-1 text-[11px] text-slate-500">
+                        Uploaded on {new Date(hist.uploaded_at).toLocaleString('en-IN')}
+                        {hist.officer_remarks && (
+                          <span className="ml-2 font-medium text-rose-700">
+                            • Officer note: "{hist.officer_remarks}"
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setHistoryPreviewDoc({
+                          id: hist.id,
+                          original_filename: hist.original_filename,
+                          mime_type: hist.mime_type,
+                        })
+                      }
+                      className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold text-purple-800 hover:text-purple-950 bg-purple-100/70 hover:bg-purple-200 rounded transition-colors self-start sm:self-center"
+                    >
+                      <Eye className="w-3 h-3" />
+                      View Archival Doc
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Officer Human Decision Section */}
         <div className="pt-4 border-t border-slate-200">
@@ -324,6 +401,17 @@ export const DocumentScrutinyCard: React.FC<DocumentScrutinyCardProps> = ({
         onConfirm={handleConfirmOverride}
         onCancel={() => setIsOverrideModalOpen(false)}
       />
+
+      {/* Archival / Revision Document Preview Modal */}
+      {historyPreviewDoc && (
+        <DocumentPreviewModal
+          documentId={historyPreviewDoc.id}
+          originalFilename={historyPreviewDoc.original_filename}
+          mimeType={historyPreviewDoc.mime_type}
+          isOpen={!!historyPreviewDoc}
+          onClose={() => setHistoryPreviewDoc(null)}
+        />
+      )}
     </div>
   );
 };

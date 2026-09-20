@@ -124,11 +124,9 @@ def test_applicant_cannot_change_protected_workflow_status_directly(client: Test
 
 
 def test_officer_cannot_access_application_outside_assigned_scope(client: TestClient, db: Session):
-    # Retrieve two distinct schemes (e.g. NFST and NOS)
-    schemes = db.query(Scheme).filter(Scheme.is_active == True).all()
-    assert len(schemes) >= 2, "Requires at least 2 schemes to test scoped officer jurisdiction"
-    scheme_nfst = schemes[0]
-    scheme_nos = schemes[1]
+    scheme_nfst = db.query(Scheme).filter(Scheme.scheme_code == "NFST").first()
+    scheme_nos = db.query(Scheme).filter(Scheme.scheme_code == "NOS").first()
+    assert scheme_nfst is not None and scheme_nos is not None, "Requires NFST and NOS to test scoped officer jurisdiction"
 
     # Create an officer specifically assigned ONLY to scheme_nfst
     scoped_officer_email = "scoped_officer@demo.gov.in"
@@ -157,7 +155,11 @@ def test_officer_cannot_access_application_outside_assigned_scope(client: TestCl
             is_active=True,
         )
         db.add(assignment)
-        db.commit()
+    else:
+        assignment.scheme_id = scheme_nfst.id
+        assignment.is_active = True
+        db.add(assignment)
+    db.commit()
 
     token_scoped_officer = _get_token_for(client, scoped_officer_email)
     token_applicant = _get_token_for(client, "applicant@demo.gov.in")

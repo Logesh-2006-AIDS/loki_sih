@@ -70,6 +70,24 @@ export interface OfficerDocumentScrutinyItem {
   verified_by?: string | null;
   verified_by_name?: string | null;
   verified_at?: string | null;
+
+  // Phase 5 Lineage & History
+  version?: number;
+  is_current?: boolean;
+  parent_document_id?: string | null;
+  history?: Array<{
+    id: string;
+    version: number;
+    original_filename: string;
+    mime_type: string;
+    file_size: number;
+    status: string;
+    uploaded_at: string;
+    officer_decision?: string | null;
+    officer_remarks?: string | null;
+    ocr_text?: string | null;
+    flags?: any[];
+  }>;
 }
 
 export interface OfficerApplicationScrutinyResponse {
@@ -77,6 +95,20 @@ export interface OfficerApplicationScrutinyResponse {
   reference_id: string;
   status: string;
   submitted_at?: string | null;
+  resubmission_count?: number;
+  resubmitted_at?: string | null;
+  deficiencies_history?: Array<{
+    id: string;
+    document_id?: string | null;
+    reason: string;
+    applicant_message: string;
+    status: string;
+    cycle: number;
+    created_at: string;
+    replacement_uploaded_at?: string | null;
+    resolved_at?: string | null;
+    applicant_remarks?: string | null;
+  }>;
 
   applicant_id: string;
   applicant_name: string;

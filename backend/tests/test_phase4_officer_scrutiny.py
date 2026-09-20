@@ -26,9 +26,9 @@ def _get_token(client: TestClient, email: str, password: str = "Demo@12345") -> 
 
 def _setup_test_environment(client: TestClient, db: Session):
     """Sets up an applicant, an application, and test documents in UNDER_MANUAL_REVIEW."""
-    # Ensure active scheme
-    scheme = db.query(Scheme).filter(Scheme.is_active == True).first()
-    assert scheme is not None
+    # Ensure active NFST scheme (test documents match NFST requirements)
+    scheme = db.query(Scheme).filter(Scheme.scheme_code == "NFST").first()
+    assert scheme is not None, "NFST scheme must exist"
 
     # Ensure applicant
     applicant = db.query(User).filter(User.email == "applicant@demo.gov.in").first()

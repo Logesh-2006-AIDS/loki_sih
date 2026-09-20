@@ -306,11 +306,12 @@ class OfficerService:
         if not version:
             version = self.scheme_version_repo.get_active_version(app.scheme_id)
 
-        # Fetch documents and map to scrutiny items
-        documents = app.documents or []
+        # Fetch active documents (is_current = True) and map to scrutiny items
+        all_docs = app.documents or []
+        current_docs = [d for d in all_docs if getattr(d, "is_current", True)]
         doc_items: List[OfficerDocumentScrutinyItem] = []
 
-        for doc in documents:
+        for doc in current_docs:
             # Latest authoritative DocumentVerification record
             verification = (
                 self.db.query(DocumentVerification)
@@ -325,6 +326,36 @@ class OfficerService:
                 if verifier_user:
                     verifier_name = verifier_user.full_name
 
+            # Query historical superseded versions of this document type
+            history_docs = (
+                self.db.query(Document)
+                .filter(
+                    Document.application_id == app.id,
+                    Document.document_type == doc.document_type,
+                    Document.id != doc.id,
+                )
+                .order_by(Document.version.asc())
+                .all()
+            )
+            history_items = []
+            for h in history_docs:
+                h_verif = (
+                    self.db.query(DocumentVerification)
+                    .filter(DocumentVerification.document_id == h.id)
+                    .order_by(DocumentVerification.created_at.desc())
+                    .first()
+                )
+                history_items.append({
+                    "id": str(h.id),
+                    "version": getattr(h, "version", 1),
+                    "original_filename": h.original_filename,
+                    "status": str(h.status.value if hasattr(h.status, "value") else h.status),
+                    "uploaded_at": h.uploaded_at.isoformat() if h.uploaded_at else None,
+                    "officer_decision": h_verif.officer_decision if h_verif else None,
+                    "officer_remarks": h_verif.officer_remarks if h_verif else None,
+                    "extracted_fields": h_verif.extracted_fields if h_verif else {},
+                })
+
             doc_items.append(
                 OfficerDocumentScrutinyItem(
                     id=doc.id,
@@ -334,6 +365,10 @@ class OfficerService:
                     file_size=doc.file_size,
                     status=str(doc.status.value if hasattr(doc.status, "value") else doc.status),
                     uploaded_at=doc.uploaded_at,
+                    version=getattr(doc, "version", 1),
+                    is_current=getattr(doc, "is_current", True),
+                    parent_document_id=getattr(doc, "parent_document_id", None),
+                    history=history_items,
                     ocr_text=verification.ocr_text if verification else None,
                     extracted_fields=verification.extracted_fields if verification else {},
                     field_confidences=verification.field_confidences if verification else {},
@@ -360,11 +395,37 @@ class OfficerService:
         if version and version.required_documents:
             req_docs_cfg = version.required_documents.get("documents", [])
 
+        # Query deficiency history
+        deficiencies_list = (
+            self.db.query(Deficiency)
+            .filter(Deficiency.application_id == app.id)
+            .order_by(Deficiency.cycle.asc(), Deficiency.created_at.asc())
+            .all()
+        )
+        deficiencies_history = [
+            {
+                "id": str(d.id),
+                "cycle": getattr(d, "cycle", 1),
+                "document_type": d.document.document_type if d.document else None,
+                "reason": d.reason,
+                "applicant_message": d.applicant_message,
+                "applicant_remarks": getattr(d, "applicant_remarks", None),
+                "status": d.status,
+                "created_at": d.created_at.isoformat() if d.created_at else None,
+                "replacement_uploaded_at": d.replacement_uploaded_at.isoformat() if getattr(d, "replacement_uploaded_at", None) else None,
+                "resolved_at": d.resolved_at.isoformat() if d.resolved_at else None,
+            }
+            for d in deficiencies_list
+        ]
+
         return OfficerApplicationScrutinyResponse(
             id=app.id,
             reference_id=app.reference_id,
             status=str(app.status.value if hasattr(app.status, "value") else app.status),
             submitted_at=app.submitted_at,
+            resubmission_count=getattr(app, "resubmission_count", 0),
+            resubmitted_at=getattr(app, "resubmitted_at", None),
+            deficiencies_history=deficiencies_history,
             applicant_id=applicant.id if applicant else uuid.UUID(int=0),
             applicant_name=applicant.full_name if applicant else "Unknown Applicant",
             applicant_email=applicant.email if applicant else "",
@@ -524,6 +585,50 @@ class OfficerService:
                 },
             )
 
+        # Phase 5: If this document is a replacement for a deficiency, update deficiency lifecycle
+        linked_deficiency = (
+            self.db.query(Deficiency)
+            .filter(Deficiency.replacement_document_id == doc.id)
+            .first()
+        )
+        if linked_deficiency:
+            if decision_upper == "VERIFIED":
+                linked_deficiency.status = "RESOLVED"
+                linked_deficiency.resolved_at = now_utc
+                self.audit_repo.log_event(
+                    entity_type="DEFICIENCY",
+                    entity_id=str(linked_deficiency.id),
+                    application_id=app.id,
+                    actor_id=officer.id,
+                    action="DEFICIENCY_RESOLVED",
+                    previous_status="UNDER_REVIEW",
+                    new_status="RESOLVED",
+                    details={
+                        "document_type": doc.document_type,
+                        "replacement_document_id": str(doc.id),
+                        "cycle": getattr(linked_deficiency, "cycle", 1),
+                    },
+                )
+            elif decision_upper in ("RESUBMISSION_REQUIRED", "REJECTED"):
+                linked_deficiency.status = "FAILED"
+                self.audit_repo.log_event(
+                    entity_type="DEFICIENCY",
+                    entity_id=str(linked_deficiency.id),
+                    application_id=app.id,
+                    actor_id=officer.id,
+                    action="DEFICIENCY_EVALUATION_FAILED",
+                    previous_status="UNDER_REVIEW",
+                    new_status="FAILED",
+                    details={
+                        "document_type": doc.document_type,
+                        "replacement_document_id": str(doc.id),
+                        "cycle": getattr(linked_deficiency, "cycle", 1),
+                        "officer_remarks": data.remarks,
+                    },
+                )
+            self.db.commit()
+            self.db.refresh(linked_deficiency)
+
         return OfficerDocumentScrutinyItem(
             id=doc.id,
             document_type=doc.document_type,
@@ -599,10 +704,11 @@ class OfficerService:
         # Case 1: Application Approval (VERIFIED)
         # ---------------------------------------------------------------------
         if decision_upper == "VERIFIED":
-            # 1. Check for any rejected or deficient documents first
+            # 1. Check for any rejected or deficient active documents first
             has_blocked_docs = any(
                 d.status in (DocumentStatus.RESUBMISSION_REQUIRED, DocumentStatus.REJECTED)
                 for d in documents
+                if getattr(d, "is_current", True)
             )
             if has_blocked_docs:
                 raise ValidationException(
@@ -651,8 +757,11 @@ class OfficerService:
         # Case 2: Application Flagged Deficient (DEFICIENT) -> Phase 5 Handoff
         # ---------------------------------------------------------------------
         elif decision_upper == "DEFICIENT":
-            # Must have at least one deficient document or itemized deficiency
-            deficient_docs = [d for d in documents if d.status == DocumentStatus.RESUBMISSION_REQUIRED]
+            # Must have at least one active deficient document or itemized deficiency
+            deficient_docs = [
+                d for d in documents
+                if d.status == DocumentStatus.RESUBMISSION_REQUIRED and getattr(d, "is_current", True)
+            ]
             if not deficient_docs and not (data.deficiencies and len(data.deficiencies) > 0):
                 raise ValidationException(
                     "Cannot mark application DEFICIENT without at least one document marked RESUBMISSION_REQUIRED "
@@ -660,15 +769,18 @@ class OfficerService:
                 )
 
             # Persist initial OPEN deficiency records (Phase 5 handoff contract)
+            current_cycle = (getattr(app, "resubmission_count", 0) or 0) + 1
             created_deficiencies = []
             if data.deficiencies:
                 for def_in in data.deficiencies:
                     new_def = Deficiency(
                         application_id=app.id,
+                        cycle=current_cycle,
                         document_id=def_in.document_id,
                         reason=def_in.reason,
                         applicant_message=def_in.applicant_message,
                         status="OPEN",
+                        notification_dispatched=False,
                         created_at=now_utc,
                     )
                     self.db.add(new_def)
@@ -688,10 +800,12 @@ class OfficerService:
                     msg = v.officer_remarks if (v and v.officer_remarks) else "Document rejected during desk scrutiny. Resubmission required."
                     new_def = Deficiency(
                         application_id=app.id,
+                        cycle=current_cycle,
                         document_id=d.id,
                         reason=f"DEFICIENT_{d.document_type}",
                         applicant_message=msg,
                         status="OPEN",
+                        notification_dispatched=False,
                         created_at=now_utc,
                     )
                     self.db.add(new_def)

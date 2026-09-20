@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from sqlalchemy import String, Integer, DateTime, Enum, ForeignKey, func
+from sqlalchemy import String, Integer, Boolean, DateTime, Enum, ForeignKey, func
 from sqlalchemy import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.base import Base
@@ -28,6 +28,16 @@ class Document(Base):
         index=True,
     )
 
+    # Phase 5 Lineage and Versioning
+    version: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+    is_current: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False, index=True)
+    parent_document_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("documents.id", ondelete="SET NULL"), nullable=True
+    )
+    superseded_by_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("documents.id", ondelete="SET NULL"), nullable=True
+    )
+
     uploaded_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
@@ -41,4 +51,9 @@ class Document(Base):
     # Relationships
     application = relationship("Application", back_populates="documents")
     verifications = relationship("DocumentVerification", back_populates="document", cascade="all, delete-orphan")
-    deficiencies = relationship("Deficiency", back_populates="document")
+    deficiencies = relationship("Deficiency", back_populates="document", foreign_keys="[Deficiency.document_id]")
+    replacement_deficiencies = relationship(
+        "Deficiency", back_populates="replacement_document", foreign_keys="[Deficiency.replacement_document_id]"
+    )
+    parent_document = relationship("Document", remote_side=[id], foreign_keys=[parent_document_id])
+    superseded_by = relationship("Document", remote_side=[id], foreign_keys=[superseded_by_id])

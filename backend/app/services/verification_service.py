@@ -302,8 +302,8 @@ class DocumentVerificationService:
         if not version:
             version = self.scheme_version_repo.get_active_version(app.scheme_id)
 
-        # Process each document
-        documents = app.documents or []
+        # Process each current/active document (skip historical superseded versions)
+        documents = [d for d in (app.documents or []) if getattr(d, "is_current", True)]
         verified_results = []
         for doc in documents:
             v_rec = self.verify_document(

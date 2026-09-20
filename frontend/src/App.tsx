@@ -7,6 +7,7 @@ import { SchemeDetail } from './pages/SchemeDetail';
 import { SchemeAdmin } from './pages/admin/SchemeAdmin';
 import { ApplicantDashboard } from './pages/applicant/ApplicantDashboard';
 import { ApplicationWizard } from './pages/applicant/ApplicationWizard';
+import { DeficiencyResolution } from './pages/applicant/DeficiencyResolution';
 import { OfficerDashboard } from './pages/officer/OfficerDashboard';
 import { OfficerScrutiny } from './pages/officer/OfficerScrutiny';
 
@@ -23,6 +24,7 @@ export const App: React.FC = () => {
             <Route path="/admin/schemes" element={<SchemeAdmin />} />
             <Route path="/applicant/dashboard" element={<ApplicantDashboard />} />
             <Route path="/applications/:applicationId" element={<ApplicationWizard />} />
+            <Route path="/applications/:applicationId/deficiencies" element={<DeficiencyResolution />} />
             <Route path="/officer/dashboard" element={<OfficerDashboard />} />
             <Route path="/officer/applications/:applicationId/scrutiny" element={<OfficerScrutiny />} />
             <Route path="*" element={<Navigate to="/" replace />} />
