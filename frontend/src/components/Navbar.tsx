@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { BookOpen, Settings, UserCheck, LogOut, FileText, ClipboardCheck, Award } from 'lucide-react';
+import { BookOpen, Settings, UserCheck, LogOut, FileText, ClipboardCheck, Award, BarChart3 } from 'lucide-react';
 import { authService, DEMO_CREDENTIALS } from '../services/authService';
 import { UserProfile } from '../types/scheme';
 
@@ -47,7 +47,7 @@ export const Navbar: React.FC = () => {
                 Ministry of Tribal Affairs
               </h1>
               <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-teal-900 text-teal-200 border border-teal-700">
-                Phase 6 Merit & Committee Desk
+                Phase 7 Analytics & Monitoring
               </span>
             </div>
             <p className="text-xs text-slate-400">
@@ -106,10 +106,23 @@ export const Navbar: React.FC = () => {
               Committee Workbench
             </Link>
           )}
+          {currentUser?.role === 'ADMIN' && (
+            <Link
+              to="/admin/analytics"
+              className={`px-3 py-1.5 rounded-md transition-colors flex items-center gap-1.5 ${
+                location.pathname === '/admin/analytics'
+                  ? 'bg-indigo-700 text-white'
+                  : 'text-slate-300 hover:text-white hover:bg-slate-800'
+              }`}
+            >
+              <BarChart3 className="w-4 h-4" />
+              Executive Analytics
+            </Link>
+          )}
           <Link
             to="/admin/schemes"
             className={`px-3 py-1.5 rounded-md transition-colors flex items-center gap-1.5 ${
-              location.pathname.startsWith('/admin')
+              location.pathname.startsWith('/admin/schemes')
                 ? 'bg-amber-600 text-white'
                 : 'text-slate-300 hover:text-white hover:bg-slate-800'
             }`}

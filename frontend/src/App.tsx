@@ -5,6 +5,7 @@ import { Footer } from './components/Footer';
 import { SchemeExplorer } from './pages/SchemeExplorer';
 import { SchemeDetail } from './pages/SchemeDetail';
 import { SchemeAdmin } from './pages/admin/SchemeAdmin';
+import { AdminAnalytics } from './pages/admin/AdminAnalytics';
 import { ApplicantDashboard } from './pages/applicant/ApplicantDashboard';
 import { ApplicationWizard } from './pages/applicant/ApplicationWizard';
 import { DeficiencyResolution } from './pages/applicant/DeficiencyResolution';
@@ -26,6 +27,7 @@ export const App: React.FC = () => {
             <Route path="/" element={<SchemeExplorer />} />
             <Route path="/schemes/:schemeId" element={<SchemeDetail />} />
             <Route path="/admin/schemes" element={<SchemeAdmin />} />
+            <Route path="/admin/analytics" element={<AdminAnalytics />} />
             <Route path="/applicant/dashboard" element={<ApplicantDashboard />} />
             <Route path="/applications/:applicationId" element={<ApplicationWizard />} />
             <Route path="/applications/:applicationId/deficiencies" element={<DeficiencyResolution />} />
