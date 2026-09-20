@@ -43,3 +43,4 @@ class User(Base):
     )
     notifications = relationship("Notification", back_populates="user", cascade="all, delete-orphan")
     assignments = relationship("OfficerAssignment", back_populates="officer", cascade="all, delete-orphan")
+    committee_assignments = relationship("CommitteeAssignment", back_populates="user", cascade="all, delete-orphan")

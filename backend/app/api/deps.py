@@ -124,3 +124,39 @@ def check_officer_application_scope(
             return True
     return False
 
+
+def check_committee_scheme_scope(
+    db: Session,
+    committee_user_id: uuid.UUID,
+    scheme_id: uuid.UUID,
+) -> bool:
+    """
+    Validates whether a committee user has jurisdiction over a scheme.
+    - ADMIN users have system-wide access.
+    - Committee members with an assignment matching scheme_id or global (scheme_id is None) are permitted.
+    """
+    user = db.get(User, committee_user_id)
+    if user:
+        role = user.role
+        if isinstance(role, str):
+            role = UserRole(role)
+        if role == UserRole.ADMIN:
+            return True
+
+    from app.models.committee_assignment import CommitteeAssignment
+    assignments = (
+        db.query(CommitteeAssignment)
+        .filter(
+            CommitteeAssignment.user_id == committee_user_id,
+            CommitteeAssignment.is_active == True,
+        )
+        .all()
+    )
+    if not assignments:
+        return False
+
+    for a in assignments:
+        if a.scheme_id is None or a.scheme_id == scheme_id:
+            return True
+    return False
+

@@ -33,9 +33,7 @@ LEGAL_APPLICATION_TRANSITIONS: Dict[ApplicationStatus, Set[ApplicationStatus]] =
         ApplicationStatus.REJECTED,
     },
     ApplicationStatus.VERIFIED: {
-        ApplicationStatus.SHORTLISTED,
         ApplicationStatus.MERIT_RANKED,
-        ApplicationStatus.REJECTED,
     },
     ApplicationStatus.SHORTLISTED: {
         ApplicationStatus.MERIT_RANKED,

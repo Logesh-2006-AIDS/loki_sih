@@ -403,3 +403,60 @@ def get_application_verifications(
         document_verifications=verifications,
     )
 
+
+@router.get(
+    "/{application_id}/result",
+    summary="Get sanitized selection result for applicant",
+)
+def get_applicant_selection_result(
+    application_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    from app.models.selection_result import SelectionResult
+    from app.schemas.committee import ApplicantSelectionResultResponse
+
+    app = db.get(Application, application_id)
+    if not app:
+        raise EntityNotFoundException("APPLICATION", application_id)
+
+    user_role = current_user.role
+    if isinstance(user_role, str):
+        user_role = UserRole(user_role)
+
+    if user_role == UserRole.APPLICANT and app.applicant_id != current_user.id:
+        raise ForbiddenException("Cannot access application belonging to another user")
+
+    sel = (
+        db.query(SelectionResult)
+        .filter(SelectionResult.application_id == application_id)
+        .order_by(SelectionResult.selection_round.desc(), SelectionResult.created_at.desc())
+        .first()
+    )
+
+    # Only expose selection result once application has officially reached final selection status
+    final_statuses = (
+        ApplicationStatus.SELECTED,
+        ApplicationStatus.WAITLISTED,
+        ApplicationStatus.REJECTED,
+        ApplicationStatus.FELLOWSHIP_ACTIVE,
+    )
+
+    if not sel or app.status not in final_statuses:
+        status_str = app.status.value if hasattr(app.status, "value") else str(app.status)
+        return ApplicantSelectionResultResponse(
+            application_reference_id=app.reference_id,
+            result="PENDING_ANNOUNCEMENT" if status_str in ("VERIFIED", "MERIT_RANKED") else status_str,
+            rank=None,
+            selection_round=1,
+            finalized_at=None,
+        )
+
+    return ApplicantSelectionResultResponse(
+        application_reference_id=app.reference_id,
+        result=sel.result.value if hasattr(sel.result, "value") else str(sel.result),
+        rank=sel.rank,
+        selection_round=sel.selection_round,
+        finalized_at=sel.finalized_at,
+    )
+

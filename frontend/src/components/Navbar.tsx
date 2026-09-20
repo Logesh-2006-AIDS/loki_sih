@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { BookOpen, Settings, UserCheck, LogOut, FileText, ClipboardCheck } from 'lucide-react';
+import { BookOpen, Settings, UserCheck, LogOut, FileText, ClipboardCheck, Award } from 'lucide-react';
 import { authService, DEMO_CREDENTIALS } from '../services/authService';
 import { UserProfile } from '../types/scheme';
 
@@ -47,7 +47,7 @@ export const Navbar: React.FC = () => {
                 Ministry of Tribal Affairs
               </h1>
               <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-teal-900 text-teal-200 border border-teal-700">
-                Phase 4 Verification Desk
+                Phase 6 Merit & Committee Desk
               </span>
             </div>
             <p className="text-xs text-slate-400">
@@ -91,6 +91,19 @@ export const Navbar: React.FC = () => {
             >
               <ClipboardCheck className="w-4 h-4" />
               Officer Queue
+            </Link>
+          )}
+          {(currentUser?.role === 'COMMITTEE' || currentUser?.role === 'ADMIN') && (
+            <Link
+              to="/committee"
+              className={`px-3 py-1.5 rounded-md transition-colors flex items-center gap-1.5 ${
+                location.pathname.startsWith('/committee')
+                  ? 'bg-purple-700 text-white'
+                  : 'text-slate-300 hover:text-white hover:bg-slate-800'
+              }`}
+            >
+              <Award className="w-4 h-4" />
+              Committee Workbench
             </Link>
           )}
           <Link

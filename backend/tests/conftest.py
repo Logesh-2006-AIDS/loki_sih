@@ -55,3 +55,14 @@ def officer_token(client: TestClient) -> str:
     )
     assert res.status_code == 200, f"Login failed: {res.text}"
     return res.json()["access_token"]
+
+
+@pytest.fixture(scope="session")
+def committee_token(client: TestClient) -> str:
+    res = client.post(
+        "/api/v1/auth/login",
+        json={"email": "committee@demo.gov.in", "password": "Demo@12345"},
+    )
+    assert res.status_code == 200, f"Login failed: {res.text}"
+    return res.json()["access_token"]
+

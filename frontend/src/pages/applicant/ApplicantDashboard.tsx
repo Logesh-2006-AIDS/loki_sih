@@ -8,12 +8,20 @@ import {
   Bot,
   UserCheck,
   AlertTriangle,
+  CheckCircle2,
+  Clock,
+  XCircle,
+  X,
+  ShieldCheck,
+  FileCheck,
 } from 'lucide-react';
 import { Application } from '../../types/application';
 import { Scheme } from '../../types/scheme';
 import { applicationService } from '../../services/applicationService';
 import { schemeService } from '../../services/schemeService';
 import { authService } from '../../services/authService';
+import { committeeService } from '../../services/committeeService';
+import { ApplicantSelectionResult } from '../../types/committee';
 import { DeficiencyBanner } from '../../components/deficiency/DeficiencyBanner';
 
 export const ApplicantDashboard: React.FC = () => {
@@ -22,6 +30,12 @@ export const ApplicantDashboard: React.FC = () => {
   const [schemesMap, setSchemesMap] = useState<Record<string, Scheme>>({});
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'ALL' | 'DRAFT' | 'SUBMITTED'>('ALL');
+  const [activeResult, setActiveResult] = useState<{
+    applicationId: string;
+    schemeTitle: string;
+    result: ApplicantSelectionResult;
+  } | null>(null);
+  const [resultLoadingId, setResultLoadingId] = useState<string | null>(null);
   const currentUser = authService.getCurrentUser();
 
   useEffect(() => {
@@ -46,6 +60,19 @@ export const ApplicantDashboard: React.FC = () => {
       console.error('Failed to load applicant dashboard', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleViewResult = async (appId: string, schemeTitle: string) => {
+    try {
+      setResultLoadingId(appId);
+      const res = await committeeService.getApplicantResult(appId);
+      setActiveResult({ applicationId: appId, schemeTitle, result: res });
+    } catch (err: any) {
+      console.error('Failed to load selection result', err);
+      alert(err.response?.data?.error || 'Official result not yet published for this application.');
+    } finally {
+      setResultLoadingId(null);
     }
   };
 
@@ -96,6 +123,46 @@ export const ApplicantDashboard: React.FC = () => {
         <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 text-purple-800 border border-purple-200 flex items-center gap-1">
           <UserCheck className="w-3 h-3 text-purple-600" />
           UNDER MANUAL REVIEW
+        </span>
+      );
+    }
+    if (status === 'VERIFIED') {
+      return (
+        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-teal-100 text-teal-800 border border-teal-200 flex items-center gap-1">
+          <FileCheck className="w-3 h-3 text-teal-600" />
+          VERIFIED
+        </span>
+      );
+    }
+    if (status === 'MERIT_RANKED') {
+      return (
+        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-indigo-100 text-indigo-800 border border-indigo-200 flex items-center gap-1">
+          <Award className="w-3 h-3 text-indigo-600" />
+          MERIT RANKED
+        </span>
+      );
+    }
+    if (status === 'SELECTED') {
+      return (
+        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-900 border border-emerald-300 flex items-center gap-1">
+          <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+          OFFICIALLY SELECTED
+        </span>
+      );
+    }
+    if (status === 'WAITLISTED') {
+      return (
+        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300 flex items-center gap-1">
+          <Clock className="w-3 h-3 text-amber-600" />
+          PROVISIONALLY WAITLISTED
+        </span>
+      );
+    }
+    if (status === 'REJECTED') {
+      return (
+        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-300 flex items-center gap-1">
+          <XCircle className="w-3 h-3 text-slate-500" />
+          NOT SELECTED
         </span>
       );
     }
@@ -277,7 +344,22 @@ export const ApplicantDashboard: React.FC = () => {
                       </p>
                     </div>
 
-                    <div className="shrink-0 flex items-center gap-2">
+                    <div className="shrink-0 flex items-center gap-2 flex-wrap">
+                      {['SELECTED', 'WAITLISTED', 'REJECTED'].includes(app.status) && (
+                        <button
+                          type="button"
+                          onClick={() => handleViewResult(app.id, schemeTitle)}
+                          disabled={resultLoadingId === app.id}
+                          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-bold transition-all shadow-sm bg-purple-700 hover:bg-purple-800 text-white"
+                        >
+                          {resultLoadingId === app.id ? (
+                            <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                          ) : (
+                            <Award className="w-3.5 h-3.5" />
+                          )}
+                          <span>Official Result</span>
+                        </button>
+                      )}
                       {app.status === 'DEFICIENT' && (
                         <button
                           type="button"
@@ -307,6 +389,117 @@ export const ApplicantDashboard: React.FC = () => {
                 </div>
               );
             })}
+          </div>
+        )}
+
+        {/* Sanitized Official Selection Result Modal */}
+        {activeResult && (
+          <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 space-y-5 animate-in fade-in zoom-in duration-150">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center font-bold">
+                    <Award className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-900">
+                      Official Selection Notification
+                    </h3>
+                    <p className="text-[11px] text-slate-500 font-mono">
+                      Ref: {activeResult.result.application_reference_id}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setActiveResult(null)}
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Status Showcase Card */}
+              <div
+                className={`p-5 rounded-xl border text-center space-y-2 ${
+                  activeResult.result.result === 'SELECTED'
+                    ? 'bg-emerald-50/80 border-emerald-200 text-emerald-950'
+                    : activeResult.result.result === 'WAITLISTED'
+                    ? 'bg-amber-50/80 border-amber-200 text-amber-950'
+                    : 'bg-slate-50 border-slate-200 text-slate-900'
+                }`}
+              >
+                <div className="inline-flex items-center justify-center w-12 h-12 rounded-full mx-auto shadow-sm">
+                  {activeResult.result.result === 'SELECTED' && (
+                    <CheckCircle2 className="w-10 h-10 text-emerald-600" />
+                  )}
+                  {activeResult.result.result === 'WAITLISTED' && (
+                    <Clock className="w-10 h-10 text-amber-600" />
+                  )}
+                  {activeResult.result.result === 'REJECTED' && (
+                    <XCircle className="w-10 h-10 text-slate-500" />
+                  )}
+                </div>
+
+                <div className="text-lg font-black tracking-tight">
+                  {activeResult.result.result === 'SELECTED' && 'PROVISIONALLY SELECTED FOR AWARD'}
+                  {activeResult.result.result === 'WAITLISTED' && 'PLACED ON OFFICIAL WAITLIST'}
+                  {activeResult.result.result === 'REJECTED' && 'NOT SELECTED IN CURRENT ROUND'}
+                </div>
+
+                <p className="text-xs max-w-sm mx-auto text-slate-600">
+                  {activeResult.schemeTitle}
+                </p>
+              </div>
+
+              {/* Merit and Cohort Details */}
+              <div className="grid grid-cols-2 gap-3 text-xs">
+                <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                  <span className="text-[11px] font-semibold text-slate-500 block">
+                    Final Merit Rank
+                  </span>
+                  <span className="text-lg font-bold text-slate-900 mt-0.5 block">
+                    {activeResult.result.rank ? `#${activeResult.result.rank}` : 'Unranked'}
+                  </span>
+                </div>
+                <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                  <span className="text-[11px] font-semibold text-slate-500 block">
+                    Selection Round
+                  </span>
+                  <span className="text-lg font-bold text-slate-900 mt-0.5 block">
+                    Round {activeResult.result.selection_round}
+                  </span>
+                </div>
+              </div>
+
+              {/* Statutory Notice */}
+              <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 text-[11px] text-slate-600 space-y-1.5">
+                <div className="flex items-center gap-1.5 font-bold text-slate-800">
+                  <ShieldCheck className="w-3.5 h-3.5 text-teal-600" />
+                  Statutory Evaluation Notification
+                </div>
+                <p className="leading-relaxed">
+                  Decisions have been recorded pursuant to evaluation guidelines approved by the Ministry of Tribal Affairs.
+                  {activeResult.result.finalized_at && (
+                    <span className="block mt-1 text-slate-500 font-mono text-[10px]">
+                      Batch Finalized: {new Date(activeResult.result.finalized_at).toLocaleString('en-IN')}
+                    </span>
+                  )}
+                </p>
+                <p className="text-[10px] text-slate-500 italic mt-1">
+                  * Note: Internal committee reviewer scorecards and peer remarks remain confidential under standard evaluation protocols.
+                </p>
+              </div>
+
+              <div className="flex justify-end pt-2">
+                <button
+                  type="button"
+                  onClick={() => setActiveResult(null)}
+                  className="px-4 py-2 rounded-lg bg-slate-900 text-white text-xs font-bold hover:bg-slate-800 transition-colors shadow-sm"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>

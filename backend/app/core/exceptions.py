@@ -52,3 +52,13 @@ class ConflictException(AppException):
     def __init__(self, message: str):
         super().__init__(message=message, status_code=409)
 
+
+class QuorumNotMetException(AppException):
+    def __init__(self, message: str, details: Optional[Any] = None):
+        super().__init__(message=message, status_code=400, details=details)
+
+
+class BoundaryTieConflictException(AppException):
+    def __init__(self, message: str, details: Optional[Any] = None):
+        super().__init__(message=message, status_code=409, details=details)
+

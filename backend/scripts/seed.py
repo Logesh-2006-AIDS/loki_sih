@@ -411,6 +411,55 @@ DEMO_SCHEMES = [
             ],
         },
         "scoring_weights": {
+            "disclaimer": "PROTOTYPE / DEMO CONFIGURATION — Indicative criteria for system validation only, pending official MoTA gazette verification.",
+            "configuration_status": "PROTOTYPE",
+            "total_max_score": 100.0,
+            "scoring_components": [
+                {
+                    "code": "academic_percentage",
+                    "label": "Postgraduate Qualifying Marks (%)",
+                    "weight": 40.0,
+                    "source_type": "APPLICATION_FORM_FIELD",
+                    "field_path": "academic.percentage_marks",
+                    "evaluation_type": "PERCENTAGE_NORMALIZED",
+                    "max_raw": 100.0,
+                },
+                {
+                    "code": "institution_reputation",
+                    "label": "Admitted Institution NIRF / Accreditation Tier",
+                    "weight": 30.0,
+                    "source_type": "APPLICATION_FORM_FIELD",
+                    "field_path": "research.nirf_rank",
+                    "evaluation_type": "TIER_BRACKETS",
+                    "brackets": [
+                        {"max_rank": 50, "percentage_of_weight": 100.0, "label": "NIRF Top 50"},
+                        {"max_rank": 100, "percentage_of_weight": 80.0, "label": "NIRF 51-100"},
+                        {"max_rank": 200, "percentage_of_weight": 65.0, "label": "NIRF 101-200 / State Recognized"},
+                    ],
+                    "default_percentage_of_weight": 50.0,
+                },
+                {
+                    "code": "research_proposal_rating",
+                    "label": "Committee Research Proposal & Feasibility Rating",
+                    "weight": 30.0,
+                    "source_type": "COMMITTEE_EVALUATION",
+                    "max_raw": 100.0,
+                },
+            ],
+            "committee_config": {
+                "min_assigned_evaluators": 1,
+                "required_quorum": 1,
+            },
+            "quota_config": {
+                "total_slots": 10,
+                "waitlist_slots": 3,
+            },
+            "tie_breaking_order": [
+                "ACADEMIC_PERCENTAGE",
+                "AGE_SENIORITY",
+                "FAMILY_INCOME",
+                "SUBMISSION_TIMESTAMP",
+            ],
             "academic_percentage": 40,
             "research_proposal_rating": 30,
             "institution_nirf_score": 30,
@@ -802,6 +851,57 @@ DEMO_SCHEMES = [
             ],
         },
         "scoring_weights": {
+            "disclaimer": "PROTOTYPE / DEMO CONFIGURATION — Indicative criteria for system validation only, pending official MoTA gazette verification.",
+            "configuration_status": "PROTOTYPE",
+            "total_max_score": 100.0,
+            "scoring_components": [
+                {
+                    "code": "academic_percentage",
+                    "label": "Qualifying Degree Marks (%)",
+                    "weight": 35.0,
+                    "source_type": "APPLICATION_FORM_FIELD",
+                    "field_path": "academic.percentage_marks",
+                    "evaluation_type": "PERCENTAGE_NORMALIZED",
+                    "max_raw": 100.0,
+                },
+                {
+                    "code": "institution_reputation",
+                    "label": "Foreign Institution QS World Ranking Tier",
+                    "weight": 35.0,
+                    "source_type": "APPLICATION_FORM_FIELD",
+                    "field_path": "research.qs_rank",
+                    "evaluation_type": "TIER_BRACKETS",
+                    "brackets": [
+                        {"max_rank": 50, "percentage_of_weight": 100.0, "label": "QS Top 50"},
+                        {"max_rank": 100, "percentage_of_weight": 85.0, "label": "QS 51-100"},
+                        {"max_rank": 200, "percentage_of_weight": 70.0, "label": "QS 101-200"},
+                        {"max_rank": 300, "percentage_of_weight": 55.0, "label": "QS 201-300"},
+                        {"max_rank": 500, "percentage_of_weight": 40.0, "label": "QS 301-500"},
+                    ],
+                    "default_percentage_of_weight": 30.0,
+                },
+                {
+                    "code": "sop_and_interview",
+                    "label": "Statement of Purpose & Technical Interview Rating",
+                    "weight": 30.0,
+                    "source_type": "COMMITTEE_EVALUATION",
+                    "max_raw": 100.0,
+                },
+            ],
+            "committee_config": {
+                "min_assigned_evaluators": 1,
+                "required_quorum": 1,
+            },
+            "quota_config": {
+                "total_slots": 10,
+                "waitlist_slots": 3,
+            },
+            "tie_breaking_order": [
+                "ACADEMIC_PERCENTAGE",
+                "AGE_SENIORITY",
+                "FAMILY_INCOME",
+                "SUBMISSION_TIMESTAMP",
+            ],
             "academic_percentage": 35,
             "institution_qs_rank": 35,
             "sop_and_interview": 30,
@@ -864,6 +964,26 @@ def seed_database():
                 db.add(global_assign)
                 db.commit()
                 print(f"  [+] Assigned Global Desk Scope to: {officer_user.email}")
+
+        # Explicit global assignment for Demo Committee Member (Phase 6 scope requirement)
+        committee_user = db.query(User).filter(User.email == "committee@demo.gov.in").first()
+        if committee_user:
+            from app.models.committee_assignment import CommitteeAssignment
+            existing_comm_assign = (
+                db.query(CommitteeAssignment)
+                .filter(CommitteeAssignment.user_id == committee_user.id)
+                .first()
+            )
+            if not existing_comm_assign:
+                global_comm_assign = CommitteeAssignment(
+                    user_id=committee_user.id,
+                    scheme_id=None,
+                    role_in_committee="CHAIRPERSON",
+                    is_active=True,
+                )
+                db.add(global_comm_assign)
+                db.commit()
+                print(f"  [+] Assigned Global Committee Scope to: {committee_user.email}")
 
         # Seed Demo Schemes & SchemeVersion records
         print("\n[2/2] Checking and seeding Demo Schemes & Scheme Versions...")

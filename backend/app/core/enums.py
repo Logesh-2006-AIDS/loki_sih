@@ -53,6 +53,8 @@ class AuditEntityType(str, Enum):
     SCHEME = "SCHEME"
     FELLOWSHIP = "FELLOWSHIP"
     DEFICIENCY = "DEFICIENCY"
+    COMMITTEE = "COMMITTEE"
+    SELECTION = "SELECTION"
     SYSTEM = "SYSTEM"
 
 

@@ -10,6 +10,10 @@ import { ApplicationWizard } from './pages/applicant/ApplicationWizard';
 import { DeficiencyResolution } from './pages/applicant/DeficiencyResolution';
 import { OfficerDashboard } from './pages/officer/OfficerDashboard';
 import { OfficerScrutiny } from './pages/officer/OfficerScrutiny';
+import { CommitteeDashboard } from './pages/committee/CommitteeDashboard';
+import { CommitteeQueue } from './pages/committee/CommitteeQueue';
+import { CommitteeScrutiny } from './pages/committee/CommitteeScrutiny';
+import { MeritRankingConsole } from './pages/committee/MeritRankingConsole';
 
 export const App: React.FC = () => {
   return (
@@ -27,6 +31,10 @@ export const App: React.FC = () => {
             <Route path="/applications/:applicationId/deficiencies" element={<DeficiencyResolution />} />
             <Route path="/officer/dashboard" element={<OfficerDashboard />} />
             <Route path="/officer/applications/:applicationId/scrutiny" element={<OfficerScrutiny />} />
+            <Route path="/committee" element={<CommitteeDashboard />} />
+            <Route path="/committee/batches/:batchId/queue" element={<CommitteeQueue />} />
+            <Route path="/committee/batches/:batchId/scrutiny/:applicationId" element={<CommitteeScrutiny />} />
+            <Route path="/committee/batches/:batchId/ranking" element={<MeritRankingConsole />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </div>

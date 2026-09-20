@@ -12,6 +12,9 @@ from app.models.fellowship import FellowshipRecord, RenewalSubmission, ProgressR
 from app.models.officer_assignment import OfficerAssignment
 from app.models.notification import Notification
 from app.models.audit_log import AuditLog
+from app.models.committee_assignment import CommitteeAssignment
+from app.models.committee_evaluation_batch import CommitteeEvaluationBatch
+from app.models.committee_review import CommitteeReview
 
 __all__ = [
     "Base",
@@ -30,4 +33,7 @@ __all__ = [
     "OfficerAssignment",
     "Notification",
     "AuditLog",
+    "CommitteeAssignment",
+    "CommitteeEvaluationBatch",
+    "CommitteeReview",
 ]
