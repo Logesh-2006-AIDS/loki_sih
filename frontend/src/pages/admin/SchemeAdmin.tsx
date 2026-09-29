@@ -7,7 +7,6 @@ import {
   AlertTriangle,
   RefreshCw,
   Edit,
-  UserCheck,
 } from 'lucide-react';
 import { Scheme, SchemeVersion, UserProfile } from '../../types/scheme';
 import { schemeService } from '../../services/schemeService';
@@ -220,21 +219,19 @@ export const SchemeAdmin: React.FC = () => {
             The Scheme Configuration Console is restricted to System Administrators.
             You are currently browsing with {currentUser ? `role: ${currentUser.role}` : 'an unauthenticated guest session'}.
           </p>
-
-          <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-left mb-6">
-            <p className="text-xs font-semibold text-slate-700 mb-1">
-              Prototype Quick Switch:
-            </p>
-            <p className="text-[11px] text-slate-500 mb-3">
-              Click below to immediately authenticate as the demo administrator:
-            </p>
-            <button
-              onClick={() => authService.demoLogin('ADMIN').then(() => window.dispatchEvent(new Event('auth-changed')))}
-              className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-teal-700 hover:bg-teal-800 text-white text-xs font-bold transition-all shadow-sm"
+          <div className="flex items-center justify-center gap-3">
+            <a
+              href="/login"
+              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-teal-700 hover:bg-teal-800 text-white text-xs font-bold transition-all shadow-sm"
             >
-              <UserCheck className="w-4 h-4" />
-              Login as Admin Demo
-            </button>
+              Go to Login
+            </a>
+            <a
+              href="/"
+              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition-all"
+            >
+              Return Home
+            </a>
           </div>
         </div>
       </div>

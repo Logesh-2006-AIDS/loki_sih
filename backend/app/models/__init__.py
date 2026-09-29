@@ -15,6 +15,7 @@ from app.models.audit_log import AuditLog
 from app.models.committee_assignment import CommitteeAssignment
 from app.models.committee_evaluation_batch import CommitteeEvaluationBatch
 from app.models.committee_review import CommitteeReview
+from app.models.staff_request import StaffRegistrationRequest
 
 __all__ = [
     "Base",
@@ -37,4 +38,5 @@ __all__ = [
     "CommitteeAssignment",
     "CommitteeEvaluationBatch",
     "CommitteeReview",
+    "StaffRegistrationRequest",
 ]

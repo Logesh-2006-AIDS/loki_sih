@@ -15,6 +15,7 @@ from app.api.routes import (
     analytics,
     fellowship,
     disbursements,
+    user_approvals,
 )
 
 api_router = APIRouter()
@@ -22,6 +23,7 @@ api_router = APIRouter()
 api_router.include_router(health.router, tags=["Health"])
 api_router.include_router(auth.router, prefix="/auth", tags=["Authentication"])
 api_router.include_router(users.router, prefix="/users", tags=["Users"])
+api_router.include_router(user_approvals.router, prefix="/admin/user-approvals", tags=["Admin User Approvals"])
 api_router.include_router(schemes.router, prefix="/schemes", tags=["Schemes"])
 api_router.include_router(applications.router, prefix="/applications", tags=["Applications"])
 api_router.include_router(deficiencies.router, prefix="/applications", tags=["Deficiencies & Resubmission"])

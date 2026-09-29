@@ -8,6 +8,7 @@ Seeds:
   - Explicit rule definitions and visible PROTOTYPE / DEMO disclaimers
 """
 
+import os
 import sys
 from pathlib import Path
 
@@ -20,11 +21,12 @@ from app.models.user import User
 from app.models.scheme import Scheme
 from app.models.scheme_version import SchemeVersion
 from app.models.officer_assignment import OfficerAssignment
-from app.core.enums import UserRole
+from app.core.enums import UserRole, UserAccountStatus
 from app.core.security import get_password_hash
 from app.repositories.audit_repo import AuditRepository
 
 DEMO_PASSWORD = "Demo@12345"
+ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "loki@06")
 
 DEMO_USERS = [
     {
@@ -50,9 +52,9 @@ DEMO_USERS = [
     },
     {
         "full_name": "System Administrator",
-        "email": "admin@demo.gov.in",
+        "email": "loki@gmail.com",
         "phone": "+91 9876543213",
-        "password": DEMO_PASSWORD,
+        "password": ADMIN_PASSWORD,
         "role": UserRole.ADMIN,
     },
 ]
@@ -923,7 +925,11 @@ def seed_database():
         for user_data in DEMO_USERS:
             existing = db.query(User).filter(User.email == user_data["email"]).first()
             if existing:
-                print(f"  -> User '{user_data['email']}' already exists. Skipping.")
+                existing.password_hash = get_password_hash(user_data["password"])
+                existing.account_status = UserAccountStatus.ACTIVE
+                existing.is_active = True
+                db.commit()
+                print(f"  -> User '{user_data['email']}' already exists. Updated credentials.")
             else:
                 user = User(
                     full_name=user_data["full_name"],
@@ -931,6 +937,7 @@ def seed_database():
                     phone=user_data["phone"],
                     password_hash=get_password_hash(user_data["password"]),
                     role=user_data["role"],
+                    account_status=UserAccountStatus.ACTIVE,
                     is_active=True,
                 )
                 db.add(user)
@@ -945,6 +952,16 @@ def seed_database():
                     details={"email": user.email, "role": str(user.role.value)},
                 )
                 print(f"  [+] Created User: {user.email} (Role: {user.role.value})")
+
+        # Remove legacy admin account if present
+        legacy_admin = db.query(User).filter(User.email == "admin@demo.gov.in").first()
+        if legacy_admin:
+            loki_admin = db.query(User).filter(User.email == "loki@gmail.com").first()
+            if loki_admin:
+                db.query(AuditLog).filter(AuditLog.actor_id == legacy_admin.id).update({"actor_id": loki_admin.id})
+            db.delete(legacy_admin)
+            db.commit()
+            print("  [-] Removed legacy admin@demo.gov.in account")
 
         # Explicit global assignment for Demo Officer (Phase 4 scope requirement)
         officer_user = db.query(User).filter(User.email == "officer@demo.gov.in").first()
@@ -1068,7 +1085,7 @@ def seed_database():
         print("  - Applicant: applicant@demo.gov.in")
         print("  - Officer:   officer@demo.gov.in")
         print("  - Committee: committee@demo.gov.in")
-        print("  - Admin:     admin@demo.gov.in")
+        print("  - Admin:     loki@gmail.com")
         print("=" * 70)
 
     except Exception as e:

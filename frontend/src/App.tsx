@@ -1,11 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
-import { SIHDemoTourModal } from './components/demo/SIHDemoTourModal';
+import { ProtectedRoute } from './components/auth/ProtectedRoute';
+import { Login } from './pages/Login';
+import { Register } from './pages/Register';
 import { SchemeExplorer } from './pages/SchemeExplorer';
 import { SchemeDetail } from './pages/SchemeDetail';
 import { SchemeAdmin } from './pages/admin/SchemeAdmin';
+import { AdminUserApprovals } from './pages/admin/AdminUserApprovals';
 import { AdminAnalytics } from './pages/admin/AdminAnalytics';
 import { ApplicantDashboard } from './pages/applicant/ApplicantDashboard';
 import { ApplicationWizard } from './pages/applicant/ApplicationWizard';
@@ -21,38 +24,152 @@ import { OfficerFellowshipWorkbench } from './pages/officer/OfficerFellowshipWor
 import { AdminDisbursementDesk } from './pages/admin/AdminDisbursementDesk';
 
 export const App: React.FC = () => {
-  const [isTourOpen, setIsTourOpen] = useState(false);
-
-  useEffect(() => {
-    const handleOpenTour = () => setIsTourOpen(true);
-    window.addEventListener('open-sih-tour', handleOpenTour);
-    return () => window.removeEventListener('open-sih-tour', handleOpenTour);
-  }, []);
-
   return (
     <BrowserRouter>
       <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900 font-sans">
-        <Navbar onOpenTour={() => setIsTourOpen(true)} />
-        <SIHDemoTourModal isOpen={isTourOpen} onClose={() => setIsTourOpen(false)} />
+        <Navbar />
 
         <div className="flex-1">
           <Routes>
+            {/* Public Entry & Discovery Routes */}
             <Route path="/" element={<SchemeExplorer />} />
             <Route path="/schemes/:schemeId" element={<SchemeDetail />} />
-            <Route path="/admin/schemes" element={<SchemeAdmin />} />
-            <Route path="/admin/analytics" element={<AdminAnalytics />} />
-            <Route path="/admin/disbursements" element={<AdminDisbursementDesk />} />
-            <Route path="/applicant/dashboard" element={<ApplicantDashboard />} />
-            <Route path="/applicant/fellowship" element={<FellowshipPortal />} />
-            <Route path="/applications/:applicationId" element={<ApplicationWizard />} />
-            <Route path="/applications/:applicationId/deficiencies" element={<DeficiencyResolution />} />
-            <Route path="/officer/dashboard" element={<OfficerDashboard />} />
-            <Route path="/officer/fellowships" element={<OfficerFellowshipWorkbench />} />
-            <Route path="/officer/applications/:applicationId/scrutiny" element={<OfficerScrutiny />} />
-            <Route path="/committee" element={<CommitteeDashboard />} />
-            <Route path="/committee/batches/:batchId/queue" element={<CommitteeQueue />} />
-            <Route path="/committee/batches/:batchId/scrutiny/:applicationId" element={<CommitteeScrutiny />} />
-            <Route path="/committee/batches/:batchId/ranking" element={<MeritRankingConsole />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+
+            {/* Applicant Protected Routes */}
+            <Route
+              path="/applicant/dashboard"
+              element={
+                <ProtectedRoute allowedRoles={['APPLICANT', 'ADMIN']}>
+                  <ApplicantDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/applicant/fellowship"
+              element={
+                <ProtectedRoute allowedRoles={['APPLICANT', 'ADMIN']}>
+                  <FellowshipPortal />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/applications/:applicationId"
+              element={
+                <ProtectedRoute allowedRoles={['APPLICANT', 'ADMIN']}>
+                  <ApplicationWizard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/applications/:applicationId/deficiencies"
+              element={
+                <ProtectedRoute allowedRoles={['APPLICANT', 'ADMIN']}>
+                  <DeficiencyResolution />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Officer Protected Routes */}
+            <Route
+              path="/officer/dashboard"
+              element={
+                <ProtectedRoute allowedRoles={['OFFICER', 'ADMIN']}>
+                  <OfficerDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/officer/fellowships"
+              element={
+                <ProtectedRoute allowedRoles={['OFFICER', 'ADMIN']}>
+                  <OfficerFellowshipWorkbench />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/officer/applications/:applicationId/scrutiny"
+              element={
+                <ProtectedRoute allowedRoles={['OFFICER', 'ADMIN']}>
+                  <OfficerScrutiny />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Committee Protected Routes */}
+            <Route
+              path="/committee"
+              element={
+                <ProtectedRoute allowedRoles={['COMMITTEE', 'ADMIN']}>
+                  <CommitteeDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/committee/batches/:batchId/queue"
+              element={
+                <ProtectedRoute allowedRoles={['COMMITTEE', 'ADMIN']}>
+                  <CommitteeQueue />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/committee/batches/:batchId/scrutiny/:applicationId"
+              element={
+                <ProtectedRoute allowedRoles={['COMMITTEE', 'ADMIN']}>
+                  <CommitteeScrutiny />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/committee/batches/:batchId/ranking"
+              element={
+                <ProtectedRoute allowedRoles={['COMMITTEE', 'ADMIN']}>
+                  <MeritRankingConsole />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Admin Protected Routes */}
+            <Route
+              path="/admin"
+              element={<Navigate to="/admin/schemes" replace />}
+            />
+            <Route
+              path="/admin/schemes"
+              element={
+                <ProtectedRoute allowedRoles={['ADMIN']}>
+                  <SchemeAdmin />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/user-approvals"
+              element={
+                <ProtectedRoute allowedRoles={['ADMIN']}>
+                  <AdminUserApprovals />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/analytics"
+              element={
+                <ProtectedRoute allowedRoles={['ADMIN']}>
+                  <AdminAnalytics />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/disbursements"
+              element={
+                <ProtectedRoute allowedRoles={['ADMIN']}>
+                  <AdminDisbursementDesk />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Fallback Catch-all Route */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </div>

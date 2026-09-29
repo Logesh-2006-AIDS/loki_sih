@@ -18,6 +18,7 @@ Constructs an end-to-end living demonstration covering all 8 project phases:
 Idempotent: Safe to execute repeatedly without generating duplicate records.
 """
 
+import os
 import sys
 import uuid
 from datetime import date, datetime, timedelta, timezone
@@ -42,6 +43,7 @@ from app.models.fellowship import FellowshipRecord, DisbursementInstallment, Ren
 from app.models.audit_log import AuditLog
 from app.core.enums import (
     UserRole,
+    UserAccountStatus,
     ApplicationStatus,
     DocumentStatus,
     FellowshipStatus,
@@ -52,6 +54,7 @@ from app.core.enums import (
 from app.core.security import get_password_hash
 
 DEMO_PASSWORD = "Demo@12345"
+ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "loki@06")
 
 
 def seed_sih_demo():
@@ -67,21 +70,22 @@ def seed_sih_demo():
         # ---------------------------------------------------------------------
         print("\n[1/5] Seeding Standard Role Personas...")
         personas = [
-            ("applicant@demo.gov.in", "Sunita Soren (Tribal Scholar)", UserRole.APPLICANT),
-            ("officer@demo.gov.in", "Dr. Rajesh Verma (Scrutiny Officer)", UserRole.OFFICER),
-            ("committee@demo.gov.in", "Prof. K. Nayak (Selection Committee)", UserRole.COMMITTEE),
-            ("admin@demo.gov.in", "Ministry Administrator (MoTA HQ)", UserRole.ADMIN),
+            ("applicant@demo.gov.in", "Sunita Soren (Tribal Scholar)", UserRole.APPLICANT, DEMO_PASSWORD),
+            ("officer@demo.gov.in", "Dr. Rajesh Verma (Scrutiny Officer)", UserRole.OFFICER, DEMO_PASSWORD),
+            ("committee@demo.gov.in", "Prof. K. Nayak (Selection Committee)", UserRole.COMMITTEE, DEMO_PASSWORD),
+            ("loki@gmail.com", "Ministry Administrator (MoTA HQ)", UserRole.ADMIN, ADMIN_PASSWORD),
         ]
         user_map = {}
-        for email, name, role in personas:
+        for email, name, role, pwd in personas:
             user = db.query(User).filter(User.email == email).first()
             if not user:
                 user = User(
                     email=email,
-                    password_hash=get_password_hash(DEMO_PASSWORD),
+                    password_hash=get_password_hash(pwd),
                     full_name=name,
                     phone="+91 9876543210",
                     role=role.value,
+                    account_status=UserAccountStatus.ACTIVE,
                     is_active=True,
                 )
                 db.add(user)
@@ -89,9 +93,25 @@ def seed_sih_demo():
                 db.refresh(user)
                 print(f"  [+] Created User: {email} ({role.value})")
             else:
-                user_map[role] = user
-                print(f"  [.] Existing User: {email} ({role.value})")
+                user.password_hash = get_password_hash(pwd)
+                user.role = role.value
+                user.account_status = UserAccountStatus.ACTIVE
+                user.is_active = True
+                db.commit()
+                db.refresh(user)
+                print(f"  [.] Updated Existing User: {email} ({role.value})")
             user_map[role] = user
+
+        # Remove legacy admin account if present
+        legacy_admin = db.query(User).filter(User.email == "admin@demo.gov.in").first()
+        if legacy_admin:
+            loki_admin = user_map.get(UserRole.ADMIN)
+            if loki_admin:
+                db.query(AuditLog).filter(AuditLog.actor_id == legacy_admin.id).update({"actor_id": loki_admin.id})
+                db.query(DisbursementInstallment).filter(DisbursementInstallment.approved_by == legacy_admin.id).update({"approved_by": loki_admin.id})
+            db.delete(legacy_admin)
+            db.commit()
+            print("  [-] Removed legacy admin@demo.gov.in account")
 
         # ---------------------------------------------------------------------
         # 2. Demo Schemes with Prototype Disclaimers & Scoring Weights
@@ -264,6 +284,19 @@ def seed_sih_demo():
         # 4. Multi-Stage Synthetic Dossiers (Preserving State Invariants)
         # ---------------------------------------------------------------------
         print("\n[4/5] Seeding Multi-Stage Lifecycle Dossiers (Phases 2 through 8)...")
+
+        # Ensure demo physical PDF assets exist in storage/demo
+        import pypdf
+        from app.core.config import settings
+        demo_storage_dir = Path(settings.STORAGE_PATH).resolve() / "demo"
+        demo_storage_dir.mkdir(parents=True, exist_ok=True)
+        for demo_filename in ["caste_rahul.pdf", "income_priya.pdf", "marksheet_v1.pdf"]:
+            pdf_target = demo_storage_dir / demo_filename
+            if not pdf_target.exists():
+                writer = pypdf.PdfWriter()
+                writer.add_blank_page(width=612, height=792)
+                with open(pdf_target, "wb") as f:
+                    writer.write(f)
 
         # Dossier 1: Phase 2 - Incomplete Draft
         ref1 = "DEMO-APP-2026-001"
@@ -671,7 +704,7 @@ def seed_sih_demo():
         print("  1. APPLICANT:  applicant@demo.gov.in    (Scholar Self-Service & Forms)")
         print("  2. OFFICER:    officer@demo.gov.in      (OCR Side-by-Side Desk Scrutiny)")
         print("  3. COMMITTEE:  committee@demo.gov.in    (Blind Evaluation & Merit Scoring)")
-        print("  4. ADMIN:      admin@demo.gov.in        (Analytics, Schemes & DBT Desk)")
+        print("  4. ADMIN:      loki@gmail.com           (Analytics, Schemes & DBT Desk)")
         print("=" * 75)
 
     except Exception as e:

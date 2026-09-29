@@ -21,7 +21,7 @@ class Settings(BaseSettings):
 
     # Environment & Deployment Mode
     ENVIRONMENT: str = "development"
-    EXPECTED_ALEMBIC_HEAD: str = "0008_phase8_fellowships"
+    EXPECTED_ALEMBIC_HEAD: str = "0009_staff_registration_requests"
 
     # Security & Guardrail Limits
     MAX_REQUEST_BODY_BYTES: int = 25 * 1024 * 1024  # 25 MB global HTTP request defense

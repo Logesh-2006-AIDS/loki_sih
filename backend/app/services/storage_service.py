@@ -44,7 +44,10 @@ class LocalStorageService(BaseStorageService):
         return str(target_path.relative_to(self.base_path))
 
     def get_file_path(self, storage_path: str) -> Path:
-        return self.base_path / storage_path
+        clean_path = storage_path.lstrip("/\\")
+        if clean_path.startswith("storage/") or clean_path.startswith("storage\\"):
+            clean_path = clean_path[len("storage/"):]
+        return self.base_path / clean_path
 
     def delete_file(self, storage_path: str) -> bool:
         path = self.get_file_path(storage_path)

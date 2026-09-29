@@ -2,17 +2,44 @@ import uuid
 from fastapi.testclient import TestClient
 
 
-def test_auth_login_success(client: TestClient):
+def test_auth_login_all_seeded_roles(client: TestClient):
+    roles_credentials = [
+        ("applicant@demo.gov.in", "Demo@12345", "APPLICANT"),
+        ("officer@demo.gov.in", "Demo@12345", "OFFICER"),
+        ("committee@demo.gov.in", "Demo@12345", "COMMITTEE"),
+        ("loki@gmail.com", "loki@06", "ADMIN"),
+    ]
+    for email, password, expected_role in roles_credentials:
+        response = client.post(
+            "/api/v1/auth/login",
+            json={"email": email, "password": password},
+        )
+        assert response.status_code == 200, f"Failed for {email}: {response.text}"
+        data = response.json()
+        assert "access_token" in data
+        assert data["token_type"] == "bearer"
+        assert data["user"]["email"] == email
+        assert data["user"]["role"] == expected_role
+
+
+def test_auth_login_case_insensitive_email(client: TestClient):
     response = client.post(
         "/api/v1/auth/login",
-        json={"email": "applicant@demo.gov.in", "password": "Demo@12345"},
+        json={"email": "Applicant@DEMO.gov.in", "password": "Demo@12345"},
     )
     assert response.status_code == 200
     data = response.json()
-    assert "access_token" in data
-    assert data["token_type"] == "bearer"
     assert data["user"]["email"] == "applicant@demo.gov.in"
     assert data["user"]["role"] == "APPLICANT"
+
+
+def test_auth_login_nonexistent_user(client: TestClient):
+    response = client.post(
+        "/api/v1/auth/login",
+        json={"email": "ghost.user@demo.gov.in", "password": "Demo@12345"},
+    )
+    assert response.status_code == 401
+    assert "Invalid email or password" in response.json()["error"]
 
 
 def test_auth_login_invalid_password(client: TestClient):

@@ -41,11 +41,11 @@ export const SchemeExplorer: React.FC = () => {
   };
 
   const handleApply = async (schemeId: string) => {
+    if (!authService.isAuthenticated()) {
+      navigate('/login', { state: { from: { pathname: `/schemes/${schemeId}` } } });
+      return;
+    }
     try {
-      if (!authService.isAuthenticated()) {
-        await authService.demoLogin('APPLICANT');
-        window.dispatchEvent(new Event('auth-changed'));
-      }
       const draft = await applicationService.createDraft(schemeId);
       navigate(`/applications/${draft.id}`);
     } catch (err: any) {

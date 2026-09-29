@@ -436,3 +436,41 @@ npm run build
 - [Deployment & Security Hardening Guide](docs/deployment.md)
 - [SIH 2026 Grand Finale Evaluation & Demo Script](docs/sih_demo_guide.md)
 
+
+
+
+How to View the Data:
+Option 1: Directly via Terminal (psql in Docker)
+Run this command in PowerShell:
+
+docker exec -it loki_postgres psql -U postgres -d loki_db -c "SELECT id, full_name, email, role, account_status, is_active, password_hash FROM users;"
+
+
+To see staff registration requests and rejection reasons:
+
+docker exec -it loki_postgres psql -U postgres -d loki_db -c "SELECT id, requested_role, employee_id, department, status, rejection_reason FROM staff_registration_requests;"
+
+
+
+
+
+Method C: Using pgAdmin 4
+Open pgAdmin 4.
+Right-click Servers in the left panel ➔ Register ➔ Server...
+In the General tab:
+Name: Loki Local DB
+In the Connection tab:
+Host name/address: localhost
+Port: 5432
+Maintenance database: loki_db
+Username: postgres
+Password: postgres_secure_password
+Check Save password?.
+Click Save.
+Expand Loki Local DB ➔ Databases ➔ loki_db ➔ Schemas ➔ public ➔ Tables ➔ right-click users ➔ View/Edit Data ➔ All Rows.
+NOTE
+
+Make sure the Docker container is running before attempting to connect. You can verify it is running in your terminal anytime with:
+
+powershell
+docker ps --filter "name=loki_postgres"

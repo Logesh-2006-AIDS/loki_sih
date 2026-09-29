@@ -53,15 +53,21 @@ app.include_router(health_router, prefix="/api")
 
 @app.exception_handler(AppException)
 async def handle_app_exception(request: Request, exc: AppException):
+    content = {
+        "error": exc.message,
+        "status_code": exc.status_code,
+        "details": exc.details,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
+    if getattr(exc, "reason", None) is not None:
+        content["reason"] = exc.reason
     return JSONResponse(
         status_code=exc.status_code,
-        content={
-            "error": exc.message,
-            "status_code": exc.status_code,
-            "details": exc.details,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-        },
+        content=content,
     )
+
+
+from fastapi.encoders import jsonable_encoder
 
 
 @app.exception_handler(RequestValidationError)
@@ -71,7 +77,7 @@ async def handle_validation_error(request: Request, exc: RequestValidationError)
         content={
             "error": "Request validation failed",
             "status_code": 422,
-            "details": exc.errors(),
+            "details": jsonable_encoder(exc.errors()),
             "timestamp": datetime.now(timezone.utc).isoformat(),
         },
     )

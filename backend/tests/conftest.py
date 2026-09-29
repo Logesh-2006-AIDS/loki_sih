@@ -41,7 +41,7 @@ def applicant_token(client: TestClient) -> str:
 def admin_token(client: TestClient) -> str:
     res = client.post(
         "/api/v1/auth/login",
-        json={"email": "admin@demo.gov.in", "password": "Demo@12345"},
+        json={"email": "loki@gmail.com", "password": "loki@06"},
     )
     assert res.status_code == 200, f"Login failed: {res.text}"
     return res.json()["access_token"]

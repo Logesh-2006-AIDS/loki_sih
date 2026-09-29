@@ -22,28 +22,42 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let active = true;
+
     if (isOpen && documentId) {
       setLoading(true);
       setError(null);
       officerService
         .getDocumentPreviewUrl(documentId)
         .then((url) => {
-          setBlobUrl(url);
-          setLoading(false);
+          if (active) {
+            setBlobUrl(url);
+            setLoading(false);
+          } else {
+            window.URL.revokeObjectURL(url);
+          }
         })
         .catch((err) => {
-          console.error('Failed to load document preview', err);
-          setError('Failed to load document preview. You can still download the file directly.');
-          setLoading(false);
+          if (active) {
+            console.error('Failed to load document preview', err);
+            setError('Failed to load document preview. You can still download the file directly.');
+            setLoading(false);
+          }
         });
     }
 
+    return () => {
+      active = false;
+    };
+  }, [isOpen, documentId]);
+
+  useEffect(() => {
     return () => {
       if (blobUrl) {
         window.URL.revokeObjectURL(blobUrl);
       }
     };
-  }, [isOpen, documentId]);
+  }, [blobUrl]);
 
   if (!isOpen) return null;
 
@@ -109,11 +123,29 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
           {!loading && !error && blobUrl && (
             <>
               {isPdf ? (
-                <iframe
-                  src={blobUrl}
-                  title={originalFilename}
+                <object
+                  data={blobUrl}
+                  type="application/pdf"
                   className="w-full h-full border-0"
-                />
+                >
+                  <iframe
+                    src={blobUrl}
+                    title={originalFilename}
+                    className="w-full h-full border-0"
+                  >
+                    <div className="p-8 text-center">
+                      <p className="text-sm text-slate-600 mb-3">
+                        Browser preview not available. You can download the file directly.
+                      </p>
+                      <button
+                        onClick={handleDownload}
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold bg-teal-700 text-white hover:bg-teal-800"
+                      >
+                        <Download className="w-4 h-4" /> Download to View
+                      </button>
+                    </div>
+                  </iframe>
+                </object>
               ) : isImage ? (
                 <div className="overflow-auto max-h-full p-4 flex items-center justify-center">
                   <img

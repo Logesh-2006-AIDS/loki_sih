@@ -4,6 +4,7 @@ from app.api.deps import get_db, get_current_user
 from app.models.user import User
 from app.schemas.auth import LoginRequest, Token
 from app.schemas.user import UserCreate, UserResponse
+from app.schemas.staff_request import StaffRegisterRequest, ApplicantRegisterRequest
 from app.services.auth_service import AuthService
 
 router = APIRouter()
@@ -18,6 +19,17 @@ router = APIRouter()
 def register(user_in: UserCreate, db: Session = Depends(get_db)):
     auth_service = AuthService(db)
     return auth_service.register(user_in)
+
+
+@router.post(
+    "/register-staff",
+    response_model=UserResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Submit a new staff registration request (Officer or Committee Member)",
+)
+def register_staff(staff_in: StaffRegisterRequest, db: Session = Depends(get_db)):
+    auth_service = AuthService(db)
+    return auth_service.register_staff(staff_in)
 
 
 @router.post(

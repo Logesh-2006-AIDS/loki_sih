@@ -546,3 +546,59 @@ def test_applicant_only_sees_their_own_applications(
     # Applicant A lists applications
     list_a = client.get("/api/v1/applications/", headers=headers_a).json()
     assert all(a["form_data"].get("user") != "B" for a in list_a)
+
+
+# ---------------------------------------------------------------------------
+# Test 21: Storage path normalization protects against root escapes
+# ---------------------------------------------------------------------------
+
+def test_storage_service_path_normalization():
+    from app.services.storage_service import LocalStorageService
+    storage = LocalStorageService()
+    
+    # Path with leading slashes or redundant storage/ prefix
+    p1 = storage.get_file_path("/storage/demo/caste_rahul.pdf")
+    p2 = storage.get_file_path("demo/caste_rahul.pdf")
+    p3 = storage.get_file_path(r"\storage\demo\caste_rahul.pdf")
+    p4 = storage.get_file_path("applications/test-uuid/doc.pdf")
+    
+    # All must resolve inside storage base_path
+    assert str(p1).startswith(str(storage.base_path))
+    assert str(p2).startswith(str(storage.base_path))
+    assert str(p3).startswith(str(storage.base_path))
+    assert str(p4).startswith(str(storage.base_path))
+    assert p1 == p2
+
+
+# ---------------------------------------------------------------------------
+# Test 22: Document download returns inline disposition and exact bytes
+# ---------------------------------------------------------------------------
+
+def test_document_download_inline_disposition(
+    client: TestClient, applicant_token: str, nfst_scheme: Scheme
+):
+    headers = {"Authorization": f"Bearer {applicant_token}"}
+    create_res = client.post(
+        "/api/v1/applications/",
+        headers=headers,
+        json={"scheme_id": str(nfst_scheme.id), "form_data": {"test": "pdf_inline"}},
+    )
+    app_id = create_res.json()["id"]
+
+    # Minimal valid PDF structure
+    pdf_bytes = b"%PDF-1.4\n1 0 obj\n<<\n>>\nendobj\ntrailer\n<<\n>>\n%%EOF"
+    upload_res = client.post(
+        f"/api/v1/applications/{app_id}/documents",
+        headers=headers,
+        data={"document_type": "caste_certificate"},
+        files={"file": ("cert.pdf", io.BytesIO(pdf_bytes), "application/pdf")},
+    )
+    assert upload_res.status_code == 201
+    doc_id = upload_res.json()["id"]
+
+    dl_res = client.get(f"/api/v1/documents/{doc_id}/download", headers=headers)
+    assert dl_res.status_code == 200
+    assert dl_res.headers.get("content-type") == "application/pdf"
+    assert "inline" in dl_res.headers.get("content-disposition", "")
+    assert dl_res.content == pdf_bytes
+

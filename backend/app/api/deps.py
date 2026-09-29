@@ -4,7 +4,7 @@ from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from app.core.config import settings
-from app.core.enums import UserRole
+from app.core.enums import UserRole, UserAccountStatus
 from app.core.exceptions import UnauthorizedException, ForbiddenException
 from app.core.security import decode_access_token
 from app.db.session import get_db
@@ -40,8 +40,8 @@ def get_current_user(
     if not user:
         raise UnauthorizedException("User account not found")
 
-    if not user.is_active:
-        raise ForbiddenException("User account is inactive")
+    if not user.is_active or user.account_status != UserAccountStatus.ACTIVE:
+        raise ForbiddenException("User account is inactive or pending approval")
 
     return user
 

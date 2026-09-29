@@ -144,8 +144,8 @@ export const CommitteeDashboard: React.FC = () => {
                 <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-500/20 text-indigo-200 border border-indigo-400/30">
                   Phase 6 Scrutiny Engine
                 </span>
-                <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-500/20 text-amber-300 border border-amber-400/30">
-                  Prototype Demo
+                <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
+                  Authorized Session
                 </span>
               </div>
               <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">

@@ -186,6 +186,7 @@ def download_document(
         path=str(file_path),
         filename=original_filename,
         media_type=mime_type,
+        content_disposition_type="inline",
     )
 
 

@@ -29,8 +29,8 @@ export const SchemeDetail: React.FC = () => {
     if (!scheme) return;
     try {
       if (!authService.isAuthenticated()) {
-        await authService.demoLogin('APPLICANT');
-        window.dispatchEvent(new Event('auth-changed'));
+        navigate(`/login?redirect=${encodeURIComponent(`/schemes/${scheme.id}`)}`);
+        return;
       }
       const draft = await applicationService.createDraft(scheme.id);
       navigate(`/applications/${draft.id}`);

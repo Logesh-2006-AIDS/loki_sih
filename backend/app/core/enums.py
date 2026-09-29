@@ -8,6 +8,19 @@ class UserRole(str, Enum):
     ADMIN = "ADMIN"
 
 
+class UserAccountStatus(str, Enum):
+    ACTIVE = "ACTIVE"
+    PENDING_APPROVAL = "PENDING_APPROVAL"
+    REJECTED = "REJECTED"
+    SUSPENDED = "SUSPENDED"
+
+
+class StaffRequestStatus(str, Enum):
+    PENDING = "PENDING"
+    APPROVED = "APPROVED"
+    REJECTED = "REJECTED"
+
+
 class ApplicationStatus(str, Enum):
     DRAFT = "DRAFT"
     SUBMITTED = "SUBMITTED"

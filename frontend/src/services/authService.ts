@@ -7,32 +7,34 @@ export interface LoginResponse {
   user: UserProfile;
 }
 
-export const DEMO_CREDENTIALS: Record<string, { email: string; roleName: string }> = {
-  APPLICANT: { email: 'applicant@demo.gov.in', roleName: 'Tribal Applicant' },
-  OFFICER: { email: 'officer@demo.gov.in', roleName: 'Verification Officer' },
-  COMMITTEE: { email: 'committee@demo.gov.in', roleName: 'Selection Committee' },
-  ADMIN: { email: 'admin@demo.gov.in', roleName: 'System Administrator' },
-};
-
 export const authService = {
-  async login(email: string, password = 'Demo@12345'): Promise<UserProfile> {
+  async login(email: string, password: string): Promise<UserProfile> {
     const res = await api.post<LoginResponse>('/auth/login', {
-      email,
+      email: email.trim(),
       password,
     });
     localStorage.setItem('token', res.data.access_token);
     localStorage.setItem('user', JSON.stringify(res.data.user));
+    window.dispatchEvent(new Event('auth-changed'));
     return res.data.user;
   },
 
-  async demoLogin(role: 'APPLICANT' | 'OFFICER' | 'COMMITTEE' | 'ADMIN'): Promise<UserProfile> {
-    const creds = DEMO_CREDENTIALS[role];
-    return this.login(creds.email, 'Demo@12345');
+  async fetchCurrentUser(): Promise<UserProfile | null> {
+    if (!this.isAuthenticated()) return null;
+    try {
+      const res = await api.get<UserProfile>('/auth/me');
+      localStorage.setItem('user', JSON.stringify(res.data));
+      return res.data;
+    } catch {
+      this.logout();
+      return null;
+    }
   },
 
   logout(): void {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    window.dispatchEvent(new Event('auth-changed'));
   },
 
   getCurrentUser(): UserProfile | null {
@@ -48,4 +50,30 @@ export const authService = {
   isAuthenticated(): boolean {
     return !!localStorage.getItem('token');
   },
+
+  async registerApplicant(data: {
+    full_name: string;
+    email: string;
+    phone: string;
+    password: string;
+  }): Promise<UserProfile> {
+    const res = await api.post<UserProfile>('/auth/register', data);
+    return res.data;
+  },
+
+  async registerStaff(data: {
+    full_name: string;
+    email: string;
+    phone: string;
+    password: string;
+    requested_role: 'OFFICER' | 'COMMITTEE';
+    employee_id: string;
+    department: string;
+    designation: string;
+    jurisdiction: string;
+  }): Promise<UserProfile> {
+    const res = await api.post<UserProfile>('/auth/register-staff', data);
+    return res.data;
+  },
 };
+
